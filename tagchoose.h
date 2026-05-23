@@ -78,7 +78,6 @@ private:
     Ui::TagChoose *ui;
     QNetworkAccessManager *Manager;
     QString lastInput;
-    QString ratingImages; //safe, explicit, questionable
 };
 
 #endif // TAGCHOOSE_H

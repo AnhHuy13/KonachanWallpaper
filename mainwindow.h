@@ -5,6 +5,8 @@
 #include <QFile>
 #include "tagchoose.h"
 #include <QPlainTextEdit>
+#include <QRandomGenerator>
+#include <QFileDialog>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -20,6 +22,9 @@ public:
 
     void Fetch();
 
+    void DownloadImage(QString url, bool isSetPixmap);
+
+    QByteArray m_fullImageData;
 
 private slots:
     void on_infoBox_clicked();
@@ -30,10 +35,14 @@ private slots:
 
     void on_generateBtn_clicked();
 
+    void onFetchFinished();
+
+    void on_saveBtn_clicked();
 
 private:
     Ui::MainWindow *ui;
     TagChoose* dialog;
     QNetworkAccessManager *Manager;
+    qint32 m_CurPage;
 };
 #endif // MAINWINDOW_H

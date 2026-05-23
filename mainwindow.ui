@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>380</width>
-    <height>526</height>
+    <height>439</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -170,7 +170,7 @@
        <x>30</x>
        <y>30</y>
        <width>299</width>
-       <height>41</height>
+       <height>42</height>
       </rect>
      </property>
      <property name="locale">
@@ -216,6 +216,9 @@
           <height>40</height>
          </size>
         </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
        </widget>
       </item>
      </layout>
@@ -244,67 +247,11 @@
      </property>
     </widget>
    </widget>
-   <widget class="QGroupBox" name="groupBox1_3">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>231</y>
-      <width>351</width>
-      <height>81</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>12</pointsize>
-     </font>
-    </property>
-    <property name="locale">
-     <locale language="English" country="UnitedStates"/>
-    </property>
-    <property name="title">
-     <string>Options</string>
-    </property>
-    <widget class="QWidget" name="layoutWidget">
-     <property name="geometry">
-      <rect>
-       <x>28</x>
-       <y>30</y>
-       <width>263</width>
-       <height>39</height>
-      </rect>
-     </property>
-     <property name="locale">
-      <locale language="English" country="UnitedStates"/>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QRadioButton" name="autoCheck">
-        <property name="locale">
-         <locale language="English" country="UnitedStates"/>
-        </property>
-        <property name="text">
-         <string>Automatically set as desktop wallpaper</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QRadioButton" name="ignoreCheck">
-        <property name="locale">
-         <locale language="English" country="UnitedStates"/>
-        </property>
-        <property name="text">
-         <string>Ignore all warning messages</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </widget>
    <widget class="QPushButton" name="generateBtn">
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>321</y>
+      <y>231</y>
       <width>231</width>
       <height>31</height>
      </rect>
@@ -323,7 +270,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>358</y>
+      <y>268</y>
       <width>231</width>
       <height>111</height>
      </rect>
@@ -356,7 +303,7 @@ color:black;</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>481</y>
+      <y>391</y>
       <width>351</width>
       <height>32</height>
      </rect>

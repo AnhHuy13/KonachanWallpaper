@@ -9,14 +9,17 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setFocus();
-    this->setFixedSize(this->size().width(), this->size().height());
 
     AppData::instance().lastTagsSelected.clear();
     Manager = new QNetworkAccessManager(this);
     qDebug() << AppData::instance().TagsSelected;
+    ui->safetyBox->setItemData(0,"safe");
+    ui->safetyBox->setItemData(1,"questionable");
+    ui->safetyBox->setItemData(2,"explicit");
 
-
+    this->setFocus();
+    this->setFixedSize(this->size().width(), this->size().height());
+    this->m_CurPage = 0;
 }
 
 MainWindow::~MainWindow()
@@ -52,6 +55,8 @@ void MainWindow::on_infoBox_clicked()
     }
 }
 
+
+
 void MainWindow::on_findTagsBtn_clicked()
 {
     TagChoose *dialog = new TagChoose(this);
@@ -62,11 +67,13 @@ void MainWindow::on_findTagsBtn_clicked()
     dialog->GetApi("");
 }
 
+
 void MainWindow::handleUpdate() {
     QString tags = AppData::instance().TagsSelected.join(", ");
     ui->txtChosenTags->QPlainTextEdit::setPlainText(tags);
     AppData::instance().lastTagsSelected = AppData::instance().TagsSelected;
 }
+
 
 void MainWindow::on_generateBtn_clicked()
 {
@@ -75,7 +82,7 @@ void MainWindow::on_generateBtn_clicked()
         msgBox.setText("You should choose atleast 1 tag.");
         msgBox.setStandardButtons(QMessageBox::Ok);
         msgBox.setDefaultButton(QMessageBox::Ok);
-        int ret = msgBox.exec();
+        msgBox.exec();
     }
     else {
         Fetch();
@@ -83,21 +90,145 @@ void MainWindow::on_generateBtn_clicked()
 }
 
 void MainWindow::Fetch() {
+    ui->generateBtn->setEnabled(false);
+    m_CurPage++;
     QString APIUrlStr;
-    APIUrlStr.append("ttps://konachan.net/post.json?limit=1&random=1&tags=");
-    APIUrlStr.append(QString(AppData::instance().TagsSelected.join(+)));
+    APIUrlStr.append("https://konachan.net/post.json?limit=50&random=1&page="); //limit 50
+    APIUrlStr.append(QString::number(m_CurPage));
+    APIUrlStr.append("&tags=");
+    APIUrlStr.append(AppData::instance().TagsSelected.join("+"));
     APIUrlStr.append("+rating:");
-    APIUrlStr.append(ui->safetyBox->);
-
+    APIUrlStr.append(ui->safetyBox->currentData().toString());
+    qDebug() << APIUrlStr;
 
     QUrl APIUrl;
-    QString urlText = QString("https://konachan.net/post.json?limit=1&random=1&tags=hatsune_miku+maid+rating:explicit");
-    APIUrl = QUrl(urlText);
+    APIUrl = QUrl(APIUrlStr);
 
     QNetworkRequest request(APIUrl);
     QNetworkReply *reply = MainWindow::Manager->get(request);
 
-    // connect(reply, &QNetworkReply::finished, this, &TagChoose::onSearchFinished);
+    connect(reply, &QNetworkReply::finished, this, &MainWindow::onFetchFinished);
 }
 
+void MainWindow::onFetchFinished() {
+    qDebug() << "is loading";
+    QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+    if (!reply) return;
 
+    if (reply->error() == QNetworkReply::NoError){
+        QByteArray responseData = reply->readAll();
+        QJsonDocument JDoc = QJsonDocument::fromJson(responseData);
+
+        if (JDoc.isArray()) {
+            QJsonArray JArray = JDoc.array();
+            if (!JArray.isEmpty()) {
+                int randomIndex = QRandomGenerator::global()->bounded(JArray.size());
+                QJsonObject obj = JArray.at(randomIndex).toObject();
+                QString sampleUrl = obj.value("sample_url").toString();
+                qDebug() << "sample_url: " << sampleUrl;
+                MainWindow::DownloadImage(sampleUrl,true);
+                QJsonObject obj1 = JArray.at(randomIndex).toObject();
+                QString fullUrl = obj.value("jpeg_url").toString(); //highest res
+                qDebug() << "jpeg_url: " << fullUrl;
+                MainWindow::DownloadImage(fullUrl,false);
+            }
+            else {
+                this->m_CurPage = 0;
+                QMessageBox msgBox;
+                ui->generateBtn->setEnabled(true);
+                msgBox.setIcon(QMessageBox::Critical);
+                msgBox.setText("An error has occured.");
+                msgBox.setInformativeText("<ul>"
+                                          " <li>Your selected tags might be too specific or incompatible.</li>"
+                                          " <li>Your rating (Safe/Questionable/Explicit) might filtering all images.</li>"
+                                          " <li>Server might be busy.</li>"
+                                          " <li>You might need to loosen your tags or ratings.</li>"
+                                          "</ul>");
+                msgBox.setStandardButtons(QMessageBox::Ok);
+                msgBox.setDefaultButton(QMessageBox::Ok);
+                msgBox.exec();
+            }
+        }
+    }
+    else {
+        QMessageBox msgBox;
+        msgBox.setIcon(QMessageBox::Critical);
+        msgBox.setText("An error has occured.");
+        msgBox.setInformativeText("Please try again few more times.");
+        msgBox.setDetailedText(reply->errorString());
+        QPushButton* okBtn = msgBox.addButton(tr("Try Again"),QMessageBox::ActionRole);
+        QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"),QMessageBox::ActionRole);
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == okBtn) {
+            MainWindow::Fetch();
+        }
+        else if (msgBox.clickedButton() == cancelBtn)  {
+            this->close();
+        }
+
+        qDebug() << "Error :" << reply->errorString();
+        ui->generateBtn->setEnabled(true);
+    }
+    reply->deleteLater();
+}
+
+void MainWindow::DownloadImage(QString url, bool isSetPixmap) {
+    QNetworkRequest request((QUrl(url)));
+    QNetworkReply *reply = this->Manager->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [=]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            QByteArray data = reply->readAll();
+            if (isSetPixmap) {
+                QPixmap pm;
+                if (pm.loadFromData(data)){
+                    ui->previewImg->setPixmap(pm.scaled(ui->previewImg->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                    ui->generateBtn->setEnabled(true);
+                }else {
+                    qDebug() << "image is corrupted";
+                }
+
+            }
+            else {
+                this->m_fullImageData = data;
+            }
+        }
+        else {
+            QMessageBox msgBox;
+            msgBox.setIcon(QMessageBox::Critical);
+            msgBox.setText("An error has occured.");
+            msgBox.setInformativeText("Please try again few more times.");
+            msgBox.setDetailedText(reply->errorString());
+            QPushButton* okBtn = msgBox.addButton(tr("Try Again"),QMessageBox::ActionRole);
+            QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"),QMessageBox::ActionRole);
+            msgBox.exec();
+
+            if (msgBox.clickedButton() == okBtn) {
+                MainWindow::Fetch();
+            }
+            else if (msgBox.clickedButton() == cancelBtn)  {
+                this->close();
+            }
+
+            qDebug() << "Error :" << reply->errorString();
+            ui->generateBtn->setEnabled(true);
+        }
+        reply->deleteLater();
+    });
+}
+
+void MainWindow::on_saveBtn_clicked()
+{
+    if (m_fullImageData.isEmpty()) {return;};
+
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save image"), "", tr("Images (*.jpg)"));
+
+    if (!fileName.isEmpty()) {
+        QFile file(fileName);
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(m_fullImageData);
+            file.close();
+        }
+    }
+}

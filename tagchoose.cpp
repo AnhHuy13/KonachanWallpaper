@@ -129,7 +129,6 @@ void TagChoose::onSearchFinished() {
             TagChoose::GetApi(ui->searchBox->text()); // try again with the user's search
         }
         else if (msgBox.clickedButton() == cancelBtn)  {
-            AppData::instance().TagsSelected.clear();
             msgBox.QMessageBox::reject();
             this->close();
         }
