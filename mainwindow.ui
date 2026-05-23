@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>382</width>
-    <height>554</height>
+    <width>380</width>
+    <height>526</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,32 +17,11 @@
    <locale language="English" country="UnitedStates"/>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QLabel" name="label1">
-    <property name="geometry">
-     <rect>
-      <x>55</x>
-      <y>10</y>
-      <width>281</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>20</pointsize>
-     </font>
-    </property>
-    <property name="locale">
-     <locale language="English" country="UnitedStates"/>
-    </property>
-    <property name="text">
-     <string>Konachan Wallpaper Generator</string>
-    </property>
-   </widget>
    <widget class="QGroupBox" name="groupBox1">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>40</y>
+      <y>11</y>
       <width>351</width>
       <height>101</height>
      </rect>
@@ -169,7 +148,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>145</y>
+      <y>116</y>
       <width>351</width>
       <height>111</height>
      </rect>
@@ -190,8 +169,8 @@
       <rect>
        <x>30</x>
        <y>30</y>
-       <width>304</width>
-       <height>42</height>
+       <width>299</width>
+       <height>41</height>
       </rect>
      </property>
      <property name="locale">
@@ -224,7 +203,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QTextEdit" name="txtChosenTags">
+       <widget class="QPlainTextEdit" name="txtChosenTags">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
           <horstretch>0</horstretch>
@@ -236,12 +215,6 @@
           <width>207</width>
           <height>40</height>
          </size>
-        </property>
-        <property name="locale">
-         <locale language="English" country="UnitedStates"/>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -275,7 +248,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>260</y>
+      <y>231</y>
       <width>351</width>
       <height>81</height>
      </rect>
@@ -294,7 +267,7 @@
     <widget class="QWidget" name="layoutWidget">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>28</x>
        <y>30</y>
        <width>263</width>
        <height>39</height>
@@ -320,7 +293,7 @@
          <locale language="English" country="UnitedStates"/>
         </property>
         <property name="text">
-         <string>Ignore all confirmation messages</string>
+         <string>Ignore all warning messages</string>
         </property>
        </widget>
       </item>
@@ -331,7 +304,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>350</y>
+      <y>321</y>
       <width>231</width>
       <height>31</height>
      </rect>
@@ -350,7 +323,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>390</y>
+      <y>358</y>
       <width>231</width>
       <height>111</height>
      </rect>
@@ -383,7 +356,7 @@ color:black;</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>510</y>
+      <y>481</y>
       <width>351</width>
       <height>32</height>
      </rect>

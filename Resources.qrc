@@ -5,4 +5,5 @@
         <file>Search.png</file>
         <file>Information.png</file>
     </qresource>
+    <qresource prefix="/qss"/>
 </RCC>

@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "tagchoose.h"
+#include "AppData.h"
 #include <QToolTip>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -10,6 +11,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     this->setFocus();
     this->setFixedSize(this->size().width(), this->size().height());
+
+    AppData::instance().lastTagsSelected.clear();
+    Manager = new QNetworkAccessManager(this);
+    qDebug() << AppData::instance().TagsSelected;
+
+
 }
 
 MainWindow::~MainWindow()
@@ -48,6 +55,49 @@ void MainWindow::on_infoBox_clicked()
 void MainWindow::on_findTagsBtn_clicked()
 {
     TagChoose *dialog = new TagChoose(this);
+
+    connect(dialog, &TagChoose::tagsUpdated, this, &MainWindow::handleUpdate);
+
     dialog->show();
     dialog->GetApi("");
 }
+
+void MainWindow::handleUpdate() {
+    QString tags = AppData::instance().TagsSelected.join(", ");
+    ui->txtChosenTags->QPlainTextEdit::setPlainText(tags);
+    AppData::instance().lastTagsSelected = AppData::instance().TagsSelected;
+}
+
+void MainWindow::on_generateBtn_clicked()
+{
+    if (AppData::instance().TagsSelected.isEmpty()) {
+        QMessageBox msgBox;
+        msgBox.setText("You should choose atleast 1 tag.");
+        msgBox.setStandardButtons(QMessageBox::Ok);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        int ret = msgBox.exec();
+    }
+    else {
+        Fetch();
+    }
+}
+
+void MainWindow::Fetch() {
+    QString APIUrlStr;
+    APIUrlStr.append("ttps://konachan.net/post.json?limit=1&random=1&tags=");
+    APIUrlStr.append(QString(AppData::instance().TagsSelected.join(+)));
+    APIUrlStr.append("+rating:");
+    APIUrlStr.append(ui->safetyBox->);
+
+
+    QUrl APIUrl;
+    QString urlText = QString("https://konachan.net/post.json?limit=1&random=1&tags=hatsune_miku+maid+rating:explicit");
+    APIUrl = QUrl(urlText);
+
+    QNetworkRequest request(APIUrl);
+    QNetworkReply *reply = MainWindow::Manager->get(request);
+
+    // connect(reply, &QNetworkReply::finished, this, &TagChoose::onSearchFinished);
+}
+
+

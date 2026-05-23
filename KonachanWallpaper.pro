@@ -21,6 +21,7 @@ SOURCES += \
     tagchoose.cpp
 
 HEADERS += \
+    AppData.h \
     mainwindow.h \
     tagchoose.h
 
@@ -39,4 +40,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 RESOURCES += \
     Resources.qrc
 
-QT += core gui network
+QT += core gui network widgets

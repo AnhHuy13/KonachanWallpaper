@@ -3,7 +3,6 @@
 
 #include <QDialog>
 #include <QNetworkAccessManager>
-#include <stdio.h>
 #include <QNetworkReply>
 #include <QObject>
 #include <QJsonDocument>
@@ -13,6 +12,12 @@
 #include <QTableWidgetItem>
 #include <QStringList>
 #include <QAbstractItemView>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QMenu>
+#include <QKeyEvent>
+#include <QShortcut>
+#include <QCloseEvent>
 
 struct TagItem {
     bool isTicked = false;
@@ -21,8 +26,6 @@ struct TagItem {
     int count;
     int type;
 };
-
-extern QStringList TagsSelected;
 
 namespace Ui {
 class TagChoose;
@@ -37,23 +40,45 @@ class TagChoose : public QDialog
 
 public:
     explicit TagChoose(QWidget *parent = nullptr);
+
     QVector<TagItem> m_tagList;
+
     ~TagChoose();
+
     void GetApi(QString SearchTag = "");
+
     void onSearchFinished();
+
     void UpdateText();
+
+    void EnableBtnState(bool State);
+
+    void CallingSearch();
+
+    void closeEvent(QCloseEvent *event);
 
 private slots:
 
-    void on_searchBtn_clicked();
-
     void on_tableWidget_itemChanged(QTableWidgetItem *item);
 
-    void on_tableWidget_itemClicked(QTableWidgetItem *item);
+    void onListContextMenuRequested(const QPoint &pos);
 
-    void on_tableWidget_cellClicked(int row, int column);
+    void deleteSelectedTag();
+
+    void on_searchBox_returnPressed();
+
+    void on_buttonBox_accepted();
+
+    void on_buttonBox_rejected();
+
+signals :
+    void tagsUpdated();
 
 private:
     Ui::TagChoose *ui;
+    QNetworkAccessManager *Manager;
+    QString lastInput;
+    QString ratingImages; //safe, explicit, questionable
 };
+
 #endif // TAGCHOOSE_H

@@ -3,8 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <stdio.h>
-
-QStringList TagsSelected;
+#include "AppData.h"
 
 TagChoose::TagChoose(QWidget *parent) :
     QDialog(parent),
@@ -13,14 +12,20 @@ TagChoose::TagChoose(QWidget *parent) :
     ui->setupUi(this);
     this->setFocus();
     this->setFixedSize(this->size().width(), this->size().height());
+    this->setAttribute(Qt::WA_DeleteOnClose);
+    Manager = new QNetworkAccessManager(this);
+    ui->tableWidget->viewport()->installEventFilter(this);
+    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 
-    // Thiết lập CSS để tăng kích thước hitbox của checkbox
-    ui->tableWidget->setStyleSheet(
-        "QTableWidget::indicator {"
-        "    width: 20px;"
-        "    height: 20px;"
-        "}"
-    );
+    ui->listWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->listWidget, &QListWidget::customContextMenuRequested,this, &TagChoose::onListContextMenuRequested);
+    QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Return), ui->searchBox);
+    connect(shortcut, &QShortcut::activated, this, &TagChoose::on_searchBox_returnPressed);
+
+    connect(ui->searchBtn, &QPushButton::clicked, this, &TagChoose::on_searchBox_returnPressed);
+
+    lastInput = "";
+
 }
 
 TagChoose::~TagChoose()
@@ -28,8 +33,17 @@ TagChoose::~TagChoose()
     delete ui;
 }
 
+void TagChoose::EnableBtnState(bool State) {
+    ui->searchBtn->setEnabled(State);
+    ui->searchBox->setEnabled(State);
+}
+
 void TagChoose::GetApi(QString SearchTag) {
-    QNetworkAccessManager *Manager = new QNetworkAccessManager(this);
+    lastInput = ui->searchBox->text();
+    TagChoose::EnableBtnState(false);
+    ui->stackedWidget->setCurrentIndex(0);
+    ui->progressBar->setRange(0, 0);
+
     QUrl APIUrl;
     if (SearchTag.isEmpty()) {
         APIUrl = QUrl("https://konachan.net/tag.json?order=count&limit=1500");
@@ -40,26 +54,25 @@ void TagChoose::GetApi(QString SearchTag) {
     }
 
     QNetworkRequest request(APIUrl);
-    QNetworkReply *reply = Manager->get(request);
+    QNetworkReply *reply = TagChoose::Manager->get(request);
 
     connect(reply, &QNetworkReply::finished, this, &TagChoose::onSearchFinished);
 }
 
 void TagChoose::onSearchFinished() {
     QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
+    ui->tableWidget->clearContents();
+    UpdateText();
+
     if (reply->error() == QNetworkReply::NoError){
         QString Response = reply->readAll();
-        qDebug() << "Api Response:" << Response;
         QJsonDocument JDoc = QJsonDocument::fromJson(Response.toUtf8());
         if (JDoc.isArray()) {
             QJsonArray JArray = JDoc.array();
-            qDebug() << "Tổng số tag cào được:" << JArray.count();
+            qDebug() << JArray.count();
             m_tagList.clear();
             ui->tableWidget->setRowCount(JArray.count());
             ui->tableWidget->setColumnCount(2);
-            ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-            ui->tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
-
 
             ui->tableWidget->blockSignals(true);
             for (int i = 0; i < JArray.count(); i++) {
@@ -76,13 +89,11 @@ void TagChoose::onSearchFinished() {
                 TagItem curTag = m_tagList.at(i);
 
                 QTableWidgetItem* itemName = new QTableWidgetItem(tagObject.value("name").toString());
+                itemName->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
                 QTableWidgetItem* itemCheck = new QTableWidgetItem();
-                itemCheck->setFlags(itemCheck->flags() | Qt::ItemIsUserCheckable);
-                itemCheck->setFlags(itemCheck->flags() | Qt::ItemIsEnabled);
-                ui->tableWidget->viewport()->installEventFilter(this);
-                ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
+                itemCheck->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
 
-                if (TagsSelected.contains(tagObject.value("name").toString())) {
+                if (AppData::instance().TagsSelected.contains(tagObject.value("name").toString())) {
                     itemCheck->setCheckState(Qt::Checked);
                 } else {
                     itemCheck->setCheckState(Qt::Unchecked);
@@ -96,68 +107,167 @@ void TagChoose::onSearchFinished() {
                 ui->tableWidget->setItem(i, 1, itemName);
             }
             ui->tableWidget->blockSignals(false);
-            qDebug() << "đã lưu thành công!";
+            qDebug() << "successfully put data to tables";
+            TagChoose::EnableBtnState(true);
+            ui->stackedWidget->setCurrentIndex(1);
             ui->tableWidget->horizontalHeader()->resizeSection(0,40);
             ui->tableWidget->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
         }
     }
+
     else {
         QMessageBox msgBox;
         msgBox.setIcon(QMessageBox::Critical);
         msgBox.setText("An error has occured.");
         msgBox.setInformativeText("Please try again few more times.");
         msgBox.setDetailedText(reply->errorString());
-        msgBox.setStandardButtons(QMessageBox::Ok);
+        QPushButton* okBtn = msgBox.addButton(tr("Try Again"),QMessageBox::ActionRole);
+        QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"),QMessageBox::ActionRole);
+
+        if (msgBox.clickedButton() == okBtn) {
+            msgBox.QMessageBox::reject();
+            TagChoose::GetApi(ui->searchBox->text()); // try again with the user's search
+        }
+        else if (msgBox.clickedButton() == cancelBtn)  {
+            AppData::instance().TagsSelected.clear();
+            msgBox.QMessageBox::reject();
+            this->close();
+        }
+
+
         msgBox.exec();
+        ui->stackedWidget->setCurrentIndex(1);
 
         qDebug() << "Error :" << reply->errorString();
     }
 
     reply->deleteLater();
-    reply->manager()->deleteLater();
 }
 
 void TagChoose::UpdateText() {
-    ui->txtChosenTags->setText(TagsSelected.join(", "));
+    ui->listWidget->clear();
+    ui->listWidget->addItems(AppData::instance().TagsSelected);
 }
 
-void TagChoose::on_searchBtn_clicked()
+void TagChoose::on_searchBox_returnPressed()
 {
+    // the konachan tags using tags name like "abc_xyz",... prevent the case user's search has space
+    // characters and replace it to underscore then GetApi() it
+
     QString input = ui->searchBox->text();
-    input.replace(" ","_");
-    GetApi((input));
+    if (lastInput != input) {
+        input.replace(" ","_");
+        ui->searchBox->setText(input);
+        GetApi((input));
+    }
 }
 
-void TagChoose::on_tableWidget_itemClicked(QTableWidgetItem *item)
-{
-    // Bỏ
-}
+void TagChoose::on_tableWidget_itemChanged(QTableWidgetItem *item) {
+    if (item->column() != 0) return;
 
-void TagChoose::on_tableWidget_itemChanged(QTableWidgetItem *item)
-{
-    // Bỏ
-}
+    qDebug() << "Item changed! Row:" << item->row() << "column" << item->column() << "State:" << item->checkState();
 
-void TagChoose::on_tableWidget_cellClicked(int row, int column)
-{
-    qDebug() << "BẠN ĐÃ BẤM VÀO DÒNG" << row << "CỘT" << column;
-    QTableWidgetItem* checkItem = ui->tableWidget->item(row, 0);
-    QTableWidgetItem* nameItem = ui->tableWidget->item(row, 1);
+    ui->tableWidget->blockSignals(true);
 
-    checkItem->setCheckState((checkItem->checkState() == Qt::Checked) ? Qt::Unchecked : Qt::Checked);
-    qDebug() << "ĐÃ ĐỔI STATE Ở DÒNG" << row << "CỘT" << column;
-    if (!checkItem || !nameItem) return;
+    QTableWidgetItem* nameItem = ui->tableWidget->item(item->row(), 1);
+    if (nameItem) {
+        QString tagName = nameItem->text();
 
-    // Đảo trạng thái trực tiếp
-    Qt::CheckState next = (checkItem->checkState() == Qt::Checked) ? Qt::Unchecked : Qt::Checked;
-    checkItem->setCheckState(next);
-
-    // Cập nhật dữ liệu vào TagsSelected
-    if (next == Qt::Checked) {
-        if (!TagsSelected.contains(nameItem->text())) TagsSelected.append(nameItem->text());
-    } else {
-        TagsSelected.removeOne(nameItem->text());
+        if (item->checkState() == Qt::Checked) {
+            if (!AppData::instance().TagsSelected.contains(tagName)) {
+                AppData::instance().TagsSelected.append(tagName);
+                qDebug() << "Added tag:" << tagName;
+            }
+        } else {
+            AppData::instance().TagsSelected.removeOne(tagName);
+            qDebug() << "Removed tag:" << tagName;
+        }
+        UpdateText();
     }
 
+    ui->tableWidget->blockSignals(false);
+    qDebug() << "Finished processing row:" << item->row() << "column" << item->column() << "State:" << item->checkState();
+}
+
+void TagChoose::onListContextMenuRequested(const QPoint &pos) {
+    QListWidgetItem *item = ui->listWidget->itemAt(pos);
+    if (!item) return;
+
+    QMenu menu(this);
+    QAction *deleteAction = menu.addAction("Remove this tag");
+
+    connect(deleteAction, &QAction::triggered, this, &TagChoose::deleteSelectedTag);
+
+    ui->listWidget->setCurrentItem(item);
+
+    menu.exec(ui->listWidget->mapToGlobal(pos));
+}
+
+void TagChoose::deleteSelectedTag() {
+    QListWidgetItem *list_item = ui->listWidget->currentItem();
+    if (!list_item) return;
+
+    QString tagName = list_item->text();
+
+    AppData::instance().TagsSelected.removeOne(tagName);
+
+    auto foundItems = ui->tableWidget->findItems(tagName, Qt::MatchExactly);
+    for (auto* item : foundItems) {
+        ui->tableWidget->blockSignals(true);
+        ui->tableWidget->item(item->row(), 0)->setCheckState(Qt::Unchecked);
+        ui->tableWidget->blockSignals(false);
+    }
+
+    // update the ui
+    delete list_item;
     UpdateText();
+}
+
+void TagChoose::on_buttonBox_accepted()
+{
+    this->done(QDialog::Accepted);
+    emit tagsUpdated();
+}
+
+void TagChoose::on_buttonBox_rejected()
+{
+    this->close();
+}
+
+void TagChoose::closeEvent(QCloseEvent *event)
+{
+    if (AppData::instance().TagsSelected.isEmpty() || AppData::instance().TagsSelected == AppData::instance().lastTagsSelected) {
+        event->accept();
+        emit tagsUpdated();
+        this->done(QDialog::Accepted);
+        return;
+    }
+    else {
+        QMessageBox msgBox;
+        msgBox.setText("You have chosen your tags.");
+        msgBox.setInformativeText("Do you want to save your tags?");
+
+        QPushButton* noSaveBtn = msgBox.addButton(tr("Don't Save"), QMessageBox::ActionRole);
+        QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);
+        QPushButton* saveBtn = msgBox.addButton(tr("Save"), QMessageBox::AcceptRole);
+
+        msgBox.setDefaultButton(saveBtn);
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == noSaveBtn) {
+            AppData::instance().TagsSelected.clear();
+            event->accept();
+            emit tagsUpdated();
+            this->done(QDialog::Accepted);
+        }
+        else if (msgBox.clickedButton() == saveBtn) {
+            event->accept();
+            emit tagsUpdated();
+            this->done(QDialog::Accepted);
+        }
+        else if (msgBox.clickedButton() == cancelBtn){
+            // when user press cancel or X in message box
+            event->ignore();
+        }
+    }
 }

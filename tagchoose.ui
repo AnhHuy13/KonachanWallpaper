@@ -31,19 +31,6 @@
     <string>Find tags...</string>
    </property>
   </widget>
-  <widget class="QTextEdit" name="txtChosenTags">
-   <property name="geometry">
-    <rect>
-     <x>12</x>
-     <y>254</y>
-     <width>199</width>
-     <height>39</height>
-    </rect>
-   </property>
-   <property name="readOnly">
-    <bool>true</bool>
-   </property>
-  </widget>
   <widget class="QPushButton" name="searchBtn">
    <property name="geometry">
     <rect>
@@ -74,7 +61,7 @@
    <property name="geometry">
     <rect>
      <x>6</x>
-     <y>234</y>
+     <y>240</y>
      <width>211</width>
      <height>65</height>
     </rect>
@@ -95,31 +82,74 @@
      <string>Tags you have chosen:</string>
     </property>
    </widget>
+   <widget class="QListWidget" name="listWidget">
+    <property name="geometry">
+     <rect>
+      <x>6</x>
+      <y>20</y>
+      <width>197</width>
+      <height>39</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
-  <widget class="QDialogButtonBox" name="dialogBtn">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>252</y>
-     <width>163</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="orientation">
-    <enum>Qt::Horizontal</enum>
-   </property>
-   <property name="standardButtons">
-    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-   </property>
-  </widget>
-  <widget class="QTableWidget" name="tableWidget">
+  <widget class="QStackedWidget" name="stackedWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>51</y>
-     <width>375</width>
-     <height>173</height>
+     <y>50</y>
+     <width>377</width>
+     <height>177</height>
     </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="loading">
+    <widget class="QProgressBar" name="progressBar">
+     <property name="geometry">
+      <rect>
+       <x>64</x>
+       <y>80</y>
+       <width>261</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="value">
+      <number>24</number>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="table">
+    <widget class="QTableWidget" name="tableWidget">
+     <property name="geometry">
+      <rect>
+       <x>2</x>
+       <y>0</y>
+       <width>375</width>
+       <height>175</height>
+      </rect>
+     </property>
+     <attribute name="horizontalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="verticalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
+    </widget>
+   </widget>
+  </widget>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>224</x>
+     <y>256</y>
+     <width>164</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
  </widget>
