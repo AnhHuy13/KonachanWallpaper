@@ -40,7 +40,7 @@ void TagChoose::EnableBtnState(bool State) {
 
 void TagChoose::GetApi(QString SearchTag) {
     lastInput = ui->searchBox->text();
-    TagChoose::EnableBtnState(false);
+    this->EnableBtnState(false);
     ui->stackedWidget->setCurrentIndex(0);
     ui->progressBar->setRange(0, 0);
 
@@ -54,7 +54,7 @@ void TagChoose::GetApi(QString SearchTag) {
     }
 
     QNetworkRequest request(APIUrl);
-    QNetworkReply *reply = TagChoose::Manager->get(request);
+    QNetworkReply *reply = this->Manager->get(request);
 
     connect(reply, &QNetworkReply::finished, this, &TagChoose::onSearchFinished);
 }
@@ -108,7 +108,7 @@ void TagChoose::onSearchFinished() {
             }
             ui->tableWidget->blockSignals(false);
             qDebug() << "successfully put data to tables";
-            TagChoose::EnableBtnState(true);
+            this->EnableBtnState(true);
             ui->stackedWidget->setCurrentIndex(1);
             ui->tableWidget->horizontalHeader()->resizeSection(0,40);
             ui->tableWidget->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
@@ -126,7 +126,7 @@ void TagChoose::onSearchFinished() {
 
         if (msgBox.clickedButton() == okBtn) {
             msgBox.QMessageBox::reject();
-            TagChoose::GetApi(ui->searchBox->text()); // try again with the user's search
+            this->GetApi(ui->searchBox->text()); // try again with the user's search
         }
         else if (msgBox.clickedButton() == cancelBtn)  {
             msgBox.QMessageBox::reject();
@@ -254,7 +254,7 @@ void TagChoose::closeEvent(QCloseEvent *event)
         msgBox.exec();
 
         if (msgBox.clickedButton() == noSaveBtn) {
-            AppData::instance().TagsSelected.clear();
+            AppData::instance().TagsSelected = AppData::instance().lastTagsSelected;
             event->accept();
             emit tagsUpdated();
             this->done(QDialog::Accepted);

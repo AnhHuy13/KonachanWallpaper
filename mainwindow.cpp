@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "tagchoose.h"
+#include "setwallpaper.h"
 #include "AppData.h"
 #include <QToolTip>
 
@@ -20,11 +21,38 @@ MainWindow::MainWindow(QWidget *parent)
     this->setFocus();
     this->setFixedSize(this->size().width(), this->size().height());
     this->m_CurPage = 0;
+    this->m_fullImageExtension = "";
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::EnableToggleButtons(bool enable){
+    ui->generateBtn->setEnabled(enable);
+    ui->setWallpaperBtn->setEnabled(enable);
+    ui->saveBtn->setEnabled(enable);
+}
+
+void MainWindow::HandleErrorAndFetchAgain(QNetworkReply *reply) {
+    this->EnableToggleButtons(true);
+    QMessageBox msgBox;
+    msgBox.setIcon(QMessageBox::Critical);
+    msgBox.setText("An error has occured.");
+    msgBox.setInformativeText("Please try again few more times.");
+    msgBox.setDetailedText(reply->errorString());
+    QPushButton* okBtn = msgBox.addButton(tr("Ok"),QMessageBox::ActionRole);
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == okBtn)  {
+        this->EnableToggleButtons(true);
+        msgBox.accept();
+    }
+
+    qDebug() << "Error :" << reply->errorString();
+    this->EnableToggleButtons(true);
+
 }
 
 void MainWindow::on_infoBox_clicked()
@@ -90,7 +118,8 @@ void MainWindow::on_generateBtn_clicked()
 }
 
 void MainWindow::Fetch() {
-    ui->generateBtn->setEnabled(false);
+    this->m_loadCount = 0;
+    this->EnableToggleButtons(false);
     m_CurPage++;
     QString APIUrlStr;
     APIUrlStr.append("https://konachan.net/post.json?limit=50&random=1&page="); //limit 50
@@ -105,7 +134,7 @@ void MainWindow::Fetch() {
     APIUrl = QUrl(APIUrlStr);
 
     QNetworkRequest request(APIUrl);
-    QNetworkReply *reply = MainWindow::Manager->get(request);
+    QNetworkReply *reply = this->Manager->get(request);
 
     connect(reply, &QNetworkReply::finished, this, &MainWindow::onFetchFinished);
 }
@@ -123,112 +152,119 @@ void MainWindow::onFetchFinished() {
             QJsonArray JArray = JDoc.array();
             if (!JArray.isEmpty()) {
                 int randomIndex = QRandomGenerator::global()->bounded(JArray.size());
+
                 QJsonObject obj = JArray.at(randomIndex).toObject();
-                QString sampleUrl = obj.value("sample_url").toString();
-                qDebug() << "sample_url: " << sampleUrl;
-                MainWindow::DownloadImage(sampleUrl,true);
-                QJsonObject obj1 = JArray.at(randomIndex).toObject();
-                QString fullUrl = obj.value("jpeg_url").toString(); //highest res
-                qDebug() << "jpeg_url: " << fullUrl;
-                MainWindow::DownloadImage(fullUrl,false);
+                if (obj.value("sample_url").toString().isEmpty() == false) {
+                    QString sampleUrl = obj.value("sample_url").toString(); // preview img
+                    qDebug() << "sample_url: " << sampleUrl;
+                    this->DownloadPreviewImage(sampleUrl);
+                }
+                if (obj.value("jpeg_url").toString().isEmpty() == false) {
+                    QString fullUrl = obj.value("jpeg_url").toString(); //full img
+                    qDebug() << "jpeg_url: " << fullUrl;
+                    this->DownloadFullImage(fullUrl);
+                }
+                else {
+                    this->m_CurPage = 0;
+                    QMessageBox msgBox;
+                    this->EnableToggleButtons(true);
+                    msgBox.setIcon(QMessageBox::Critical);
+                    msgBox.setText("An error has occured.");
+                    msgBox.setInformativeText("<ul>"
+                                              " <li>Your selected tags might be too specific or incompatible.</li>"
+                                              " <li>Your rating (Safe/Questionable/Explicit) might filtering all images.</li>"
+                                              " <li>Server might be busy.</li>"
+                                              " <li>You might need to loosen your tags or ratings.</li>"
+                                              "</ul>");
+                    msgBox.setStandardButtons(QMessageBox::Ok);
+                    msgBox.setDefaultButton(QMessageBox::Ok);
+                    msgBox.exec();
+                }
             }
-            else {
-                this->m_CurPage = 0;
-                QMessageBox msgBox;
-                ui->generateBtn->setEnabled(true);
-                msgBox.setIcon(QMessageBox::Critical);
-                msgBox.setText("An error has occured.");
-                msgBox.setInformativeText("<ul>"
-                                          " <li>Your selected tags might be too specific or incompatible.</li>"
-                                          " <li>Your rating (Safe/Questionable/Explicit) might filtering all images.</li>"
-                                          " <li>Server might be busy.</li>"
-                                          " <li>You might need to loosen your tags or ratings.</li>"
-                                          "</ul>");
-                msgBox.setStandardButtons(QMessageBox::Ok);
-                msgBox.setDefaultButton(QMessageBox::Ok);
-                msgBox.exec();
-            }
         }
+        else {
+            this->HandleErrorAndFetchAgain(reply);
+        }
+        reply->deleteLater();
     }
-    else {
-        QMessageBox msgBox;
-        msgBox.setIcon(QMessageBox::Critical);
-        msgBox.setText("An error has occured.");
-        msgBox.setInformativeText("Please try again few more times.");
-        msgBox.setDetailedText(reply->errorString());
-        QPushButton* okBtn = msgBox.addButton(tr("Try Again"),QMessageBox::ActionRole);
-        QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"),QMessageBox::ActionRole);
-        msgBox.exec();
-
-        if (msgBox.clickedButton() == okBtn) {
-            MainWindow::Fetch();
-        }
-        else if (msgBox.clickedButton() == cancelBtn)  {
-            this->close();
-        }
-
-        qDebug() << "Error :" << reply->errorString();
-        ui->generateBtn->setEnabled(true);
-    }
-    reply->deleteLater();
 }
-
-void MainWindow::DownloadImage(QString url, bool isSetPixmap) {
+void MainWindow::DownloadPreviewImage(QString url) {
     QNetworkRequest request((QUrl(url)));
+    request.setTransferTimeout(5000);
     QNetworkReply *reply = this->Manager->get(request);
 
     connect(reply, &QNetworkReply::finished, this, [=]() {
         if (reply->error() == QNetworkReply::NoError) {
-            QByteArray data = reply->readAll();
-            if (isSetPixmap) {
-                QPixmap pm;
-                if (pm.loadFromData(data)){
-                    ui->previewImg->setPixmap(pm.scaled(ui->previewImg->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-                    ui->generateBtn->setEnabled(true);
-                }else {
-                    qDebug() << "image is corrupted";
+            qDebug() << "Đang tải Preview image";
+            QPixmap pm;
+            if (pm.loadFromData(reply->readAll())){
+                ui->previewImg->setPixmap(pm.scaled(ui->previewImg->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+                m_loadCount++;
+                if (m_loadCount >= 2) {
+                    this->EnableToggleButtons(true);
                 }
-
             }
             else {
-                this->m_fullImageData = data;
+                qDebug() << "image is corrupted";
             }
         }
         else {
-            QMessageBox msgBox;
-            msgBox.setIcon(QMessageBox::Critical);
-            msgBox.setText("An error has occured.");
-            msgBox.setInformativeText("Please try again few more times.");
-            msgBox.setDetailedText(reply->errorString());
-            QPushButton* okBtn = msgBox.addButton(tr("Try Again"),QMessageBox::ActionRole);
-            QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"),QMessageBox::ActionRole);
-            msgBox.exec();
-
-            if (msgBox.clickedButton() == okBtn) {
-                MainWindow::Fetch();
-            }
-            else if (msgBox.clickedButton() == cancelBtn)  {
-                this->close();
-            }
-
-            qDebug() << "Error :" << reply->errorString();
-            ui->generateBtn->setEnabled(true);
+            qDebug() << "Lỗi ở Preview image!";
+            this->EnableToggleButtons(true);
+            this->HandleErrorAndFetchAgain(reply);
         }
         reply->deleteLater();
     });
 }
 
+void MainWindow::DownloadFullImage(QString url) {
+    QFileInfo fileInfo(url);
+    this->m_fullImageExtension = fileInfo.suffix();
+    QNetworkRequest request((QUrl(url)));
+    request.setTransferTimeout(5000);
+    QNetworkReply *reply = this->Manager->get(request);
+
+    connect(reply, &QNetworkReply::finished, this, [=]() {
+        if (reply->error() == QNetworkReply::NoError) {
+            qDebug() << "Đang tải full image!";
+            QByteArray data = reply->readAll();
+            this->m_fullImageData = data;
+            m_loadCount++;
+            if (m_loadCount >= 2) {
+                this->EnableToggleButtons(true);
+            }
+        }
+        else {
+            qDebug() << "Lỗi ở Full image!";
+            this->EnableToggleButtons(true);
+            this->HandleErrorAndFetchAgain(reply);
+        }
+        reply->deleteLater();
+    });
+}
+
+
 void MainWindow::on_saveBtn_clicked()
 {
     if (m_fullImageData.isEmpty()) {return;};
 
-    QString fileName = QFileDialog::getSaveFileName(this, tr("Save image"), "", tr("Images (*.jpg)"));
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Save image"), "", tr("Images (*.jpg *.png *.jpeg)"));
 
     if (!fileName.isEmpty()) {
-        QFile file(fileName);
-        if (file.open(QIODevice::WriteOnly)) {
-            file.write(m_fullImageData);
-            file.close();
+        this->statusBar()->showMessage("Saving image...");
+        QImage img = QImage::fromData(m_fullImageData);
+        if (!img.isNull()) {
+            img.save(fileName);
+            this->statusBar()->showMessage("Image saved successfully at "+ fileName, 3000);
+        }
+        else {
+            QMessageBox::critical(this, "Error", "Could not save file");
         }
     }
+}
+
+void MainWindow::on_setWallpaperBtn_clicked()
+{
+    SetWallpaper idk;
+    idk.DownloadWallpaper(this->m_fullImageData,this->m_fullImageExtension);
 }

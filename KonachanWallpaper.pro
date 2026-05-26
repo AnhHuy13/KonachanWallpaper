@@ -18,11 +18,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
+    setwallpaper.cpp \
     tagchoose.cpp
 
 HEADERS += \
     AppData.h \
     mainwindow.h \
+    setwallpaper.h \
     tagchoose.h
 
 FORMS += \

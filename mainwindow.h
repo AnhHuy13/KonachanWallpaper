@@ -22,7 +22,13 @@ public:
 
     void Fetch();
 
-    void DownloadImage(QString url, bool isSetPixmap);
+    void DownloadPreviewImage(QString url);
+
+    void DownloadFullImage(QString url);
+
+    void EnableToggleButtons(bool enable);
+
+    void HandleErrorAndFetchAgain(QNetworkReply *reply);
 
     QByteArray m_fullImageData;
 
@@ -39,10 +45,15 @@ private slots:
 
     void on_saveBtn_clicked();
 
+
+    void on_setWallpaperBtn_clicked();
+
 private:
     Ui::MainWindow *ui;
     TagChoose* dialog;
     QNetworkAccessManager *Manager;
-    qint32 m_CurPage;
+    int m_CurPage;
+    int m_loadCount = 0;
+    QString m_fullImageExtension;
 };
 #endif // MAINWINDOW_H
