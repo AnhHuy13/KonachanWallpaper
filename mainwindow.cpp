@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     this->setFixedSize(this->size().width(), this->size().height());
     this->m_CurPage = 0;
     this->m_fullImageExtension = "";
+
 }
 
 MainWindow::~MainWindow()
@@ -118,7 +119,6 @@ void MainWindow::on_generateBtn_clicked()
 }
 
 void MainWindow::Fetch() {
-    this->m_loadCount = 0;
     this->EnableToggleButtons(false);
     m_CurPage++;
     QString APIUrlStr;
@@ -134,6 +134,8 @@ void MainWindow::Fetch() {
     APIUrl = QUrl(APIUrlStr);
 
     QNetworkRequest request(APIUrl);
+    request.setRawHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36 OPR/65.0.3467.78 (Edition Campaign 70)");
+    request.setRawHeader("Referer", "https://konachan.net/");
     QNetworkReply *reply = this->Manager->get(request);
 
     connect(reply, &QNetworkReply::finished, this, &MainWindow::onFetchFinished);
@@ -154,11 +156,6 @@ void MainWindow::onFetchFinished() {
                 int randomIndex = QRandomGenerator::global()->bounded(JArray.size());
 
                 QJsonObject obj = JArray.at(randomIndex).toObject();
-                if (obj.value("sample_url").toString().isEmpty() == false) {
-                    QString sampleUrl = obj.value("sample_url").toString(); // preview img
-                    qDebug() << "sample_url: " << sampleUrl;
-                    this->DownloadPreviewImage(sampleUrl);
-                }
                 if (obj.value("jpeg_url").toString().isEmpty() == false) {
                     QString fullUrl = obj.value("jpeg_url").toString(); //full img
                     qDebug() << "jpeg_url: " << fullUrl;
@@ -189,6 +186,7 @@ void MainWindow::onFetchFinished() {
     }
 }
 void MainWindow::DownloadPreviewImage(QString url) {
+    /*
     QNetworkRequest request((QUrl(url)));
     request.setTransferTimeout(5000);
     QNetworkReply *reply = this->Manager->get(request);
@@ -215,6 +213,7 @@ void MainWindow::DownloadPreviewImage(QString url) {
         }
         reply->deleteLater();
     });
+    */
 }
 
 void MainWindow::DownloadFullImage(QString url) {
@@ -229,11 +228,14 @@ void MainWindow::DownloadFullImage(QString url) {
             qDebug() << "Đang tải full image!";
             QByteArray data = reply->readAll();
             this->m_fullImageData = data;
-            m_loadCount++;
-            if (m_loadCount >= 2) {
-                this->EnableToggleButtons(true);
+            this->EnableToggleButtons(true);
+            QPixmap pm;
+            if (pm.loadFromData(data)){
+                ui->previewImg->setPixmap(pm.scaled(ui->previewImg->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
             }
-        }
+
+       }
+
         else {
             qDebug() << "Lỗi ở Full image!";
             this->EnableToggleButtons(true);

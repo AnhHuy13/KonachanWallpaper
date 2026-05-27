@@ -18,6 +18,8 @@ TagChoose::TagChoose(QWidget *parent) :
     ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 
     ui->listWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+    ui->listWidget->setUniformItemSizes(true);
+    ui->listWidget->setBatchSize(100);
     connect(ui->listWidget, &QListWidget::customContextMenuRequested,this, &TagChoose::onListContextMenuRequested);
     QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Return), ui->searchBox);
     connect(shortcut, &QShortcut::activated, this, &TagChoose::on_searchBox_returnPressed);
@@ -74,6 +76,9 @@ void TagChoose::onSearchFinished() {
             ui->tableWidget->setRowCount(JArray.count());
             ui->tableWidget->setColumnCount(2);
 
+            QStringList tagNames;
+            QList<TagItem> tagMetadata;
+
             ui->tableWidget->blockSignals(true);
             for (int i = 0; i < JArray.count(); i++) {
                 QJsonObject tagObject = JArray.at(i).toObject();
@@ -124,6 +129,7 @@ void TagChoose::onSearchFinished() {
         QPushButton* okBtn = msgBox.addButton(tr("Try Again"),QMessageBox::ActionRole);
         QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"),QMessageBox::ActionRole);
 
+        msgBox.exec();
         if (msgBox.clickedButton() == okBtn) {
             msgBox.QMessageBox::reject();
             this->GetApi(ui->searchBox->text()); // try again with the user's search
@@ -134,7 +140,6 @@ void TagChoose::onSearchFinished() {
         }
 
 
-        msgBox.exec();
         ui->stackedWidget->setCurrentIndex(1);
 
         qDebug() << "Error :" << reply->errorString();
