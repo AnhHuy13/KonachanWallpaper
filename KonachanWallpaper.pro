@@ -43,3 +43,5 @@ RESOURCES += \
     Resources.qrc
 
 QT += core gui network widgets
+
+CONFIG += force_debug_info

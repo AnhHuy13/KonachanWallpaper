@@ -82,14 +82,17 @@
      <string>Tags you have chosen:</string>
     </property>
    </widget>
-   <widget class="QListWidget" name="listWidget">
+   <widget class="QListView" name="tagChosenMenu">
     <property name="geometry">
      <rect>
-      <x>6</x>
+      <x>8</x>
       <y>20</y>
-      <width>197</width>
+      <width>193</width>
       <height>39</height>
      </rect>
+    </property>
+    <property name="horizontalScrollBarPolicy">
+     <enum>Qt::ScrollBarAlwaysOff</enum>
     </property>
    </widget>
   </widget>
@@ -99,11 +102,11 @@
      <x>10</x>
      <y>50</y>
      <width>377</width>
-     <height>177</height>
+     <height>183</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="loading">
     <widget class="QProgressBar" name="progressBar">
@@ -121,21 +124,21 @@
     </widget>
    </widget>
    <widget class="QWidget" name="table">
-    <widget class="QTableWidget" name="tableWidget">
+    <widget class="QListView" name="listView">
      <property name="geometry">
       <rect>
-       <x>2</x>
-       <y>0</y>
-       <width>375</width>
-       <height>175</height>
+       <x>0</x>
+       <y>2</y>
+       <width>373</width>
+       <height>179</height>
       </rect>
      </property>
-     <attribute name="horizontalHeaderVisible">
-      <bool>false</bool>
-     </attribute>
-     <attribute name="verticalHeaderVisible">
-      <bool>false</bool>
-     </attribute>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="uniformItemSizes">
+      <bool>true</bool>
+     </property>
     </widget>
    </widget>
   </widget>

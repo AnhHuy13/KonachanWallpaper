@@ -14,21 +14,22 @@ TagChoose::TagChoose(QWidget *parent) :
     this->setFixedSize(this->size().width(), this->size().height());
     this->setAttribute(Qt::WA_DeleteOnClose);
     Manager = new QNetworkAccessManager(this);
-    ui->tableWidget->viewport()->installEventFilter(this);
-    ui->tableWidget->horizontalHeader()->setStretchLastSection(true);
 
-    ui->listWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-    ui->listWidget->setUniformItemSizes(true);
-    ui->listWidget->setBatchSize(100);
-    connect(ui->listWidget, &QListWidget::customContextMenuRequested,this, &TagChoose::onListContextMenuRequested);
     QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Return), ui->searchBox);
     connect(shortcut, &QShortcut::activated, this, &TagChoose::on_searchBox_returnPressed);
-
     connect(ui->searchBtn, &QPushButton::clicked, this, &TagChoose::on_searchBox_returnPressed);
+
+    modelListTagsHave = new QStandardItemModel(this);
+    modelTagsHaveChosen = new QStandardItemModel(this);
+    ui->listView->setModel(modelListTagsHave);
+    ui->tagChosenMenu->setModel(modelTagsHaveChosen);
+    connect(modelListTagsHave, &QStandardItemModel::itemChanged, this, &TagChoose::onItemChanged);
+    //    ui->listView->setLayoutMode(QListView::Batched);
 
     lastInput = "";
 
 }
+
 
 TagChoose::~TagChoose()
 {
@@ -48,10 +49,10 @@ void TagChoose::GetApi(QString SearchTag) {
 
     QUrl APIUrl;
     if (SearchTag.isEmpty()) {
-        APIUrl = QUrl("https://konachan.net/tag.json?order=count&limit=1500");
+        APIUrl = QUrl("https://konachan.net/tag.json?order=count&limit=5000");
     }
     else {
-        QString urlText = QString("https://konachan.net/tag.json?name=*%1*&limit=1500&order=count").arg(SearchTag);
+        QString urlText = QString("https://konachan.net/tag.json?name=*%1*&limit=1000&order=count").arg(SearchTag);
         APIUrl = QUrl(urlText);
     }
 
@@ -63,94 +64,115 @@ void TagChoose::GetApi(QString SearchTag) {
 
 void TagChoose::onSearchFinished() {
     QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-    ui->tableWidget->clearContents();
     UpdateText();
 
     if (reply->error() == QNetworkReply::NoError){
         QString Response = reply->readAll();
-        QJsonDocument JDoc = QJsonDocument::fromJson(Response.toUtf8());
-        if (JDoc.isArray()) {
-            QJsonArray JArray = JDoc.array();
-            qDebug() << JArray.count();
-            m_tagList.clear();
-            ui->tableWidget->setRowCount(JArray.count());
-            ui->tableWidget->setColumnCount(2);
+        QJsonDocument JsonReturn = QJsonDocument::fromJson(Response.toUtf8());
 
-            QStringList tagNames;
-            QList<TagItem> tagMetadata;
+        if (JsonReturn.isArray() && !JsonReturn.array().isEmpty()) {
 
-            ui->tableWidget->blockSignals(true);
-            for (int i = 0; i < JArray.count(); i++) {
-                QJsonObject tagObject = JArray.at(i).toObject();
+            QJsonArray JsonArray = JsonReturn.array();
+            qDebug() << JsonArray.size();
 
-                TagItem item;
-                item.isTicked = false;
-                item.id = tagObject.value("id").toInt();
-                item.name = tagObject.value("name").toString();
-                item.count = tagObject.value("count").toInt();
-                item.type = tagObject.value("type").toInt();
+            ui->listView->setUpdatesEnabled(false);
 
-                m_tagList.append(item);
-                TagItem curTag = m_tagList.at(i);
+            modelListTagsHave->setRowCount(JsonArray.size());
 
-                QTableWidgetItem* itemName = new QTableWidgetItem(tagObject.value("name").toString());
-                itemName->setFlags(itemName->flags() & ~Qt::ItemIsEditable);
-                QTableWidgetItem* itemCheck = new QTableWidgetItem();
-                itemCheck->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+            QStringList tagsList = AppData::instance().TagsSelected;
+            QSet<QString> selectedTagsSet = QSet<QString>(tagsList.begin(), tagsList.end());
 
-                if (AppData::instance().TagsSelected.contains(tagObject.value("name").toString())) {
-                    itemCheck->setCheckState(Qt::Checked);
+            modelListTagsHave->blockSignals(true);
+
+            for (int i = 0; i < JsonArray.size(); ++i) {
+                QJsonObject tagObject = JsonArray.at(i).toObject();
+                QString tagName = tagObject.value("name").toString();
+                qDebug() << tagName;
+
+                QStandardItem *it = modelListTagsHave->item(i);
+
+                if (it == nullptr) {
+                    qDebug() << "nullptr";
                 } else {
-                    itemCheck->setCheckState(Qt::Unchecked);
+                    qDebug() << "real";
                 }
 
-                itemName->setData(Qt::UserRole + 0, curTag.id);
-                itemName->setData(Qt::UserRole + 1, curTag.type);
-                itemName->setData(Qt::UserRole + 2, curTag.count);
+                if (it == nullptr) {
+                    it = new QStandardItem();
+                    it->setCheckable(true);
+                    it->setText(tagName);
 
-                ui->tableWidget->setItem(i, 0, itemCheck);
-                ui->tableWidget->setItem(i, 1, itemName);
+                    if (selectedTagsSet.contains(tagName)) {
+                        it->setCheckState(Qt::Checked);
+                    } else {
+                        it->setCheckState(Qt::Unchecked);
+                    }
+
+                    modelListTagsHave->setItem(i, 0, it);
+                }
+                else {
+                    if (it->text() != tagName) {
+                        it->setText(tagName);
+                    }
+
+                    if (selectedTagsSet.contains(tagName)) {
+                        if (it->checkState() != Qt::Checked) {
+                            it->setCheckState(Qt::Checked);
+                        }
+                    } else {
+                        if (it->checkState() != Qt::Unchecked) {
+                            it->setCheckState(Qt::Unchecked);
+                        }
+                    }
+                }
             }
-            ui->tableWidget->blockSignals(false);
-            qDebug() << "successfully put data to tables";
+
+            qDebug() << "Successfully load " << modelListTagsHave->rowCount() << " items";
             this->EnableBtnState(true);
             ui->stackedWidget->setCurrentIndex(1);
-            ui->tableWidget->horizontalHeader()->resizeSection(0,40);
-            ui->tableWidget->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
+
+            modelListTagsHave->blockSignals(false);
+
+            ui->listView->setUpdatesEnabled(true);
+
+            ui->listView->viewport()->update();
         }
+
+        else {
+            QMessageBox msgBox;
+            msgBox.setIcon(QMessageBox::Critical);
+            msgBox.setText("An error has occured.");
+            msgBox.setInformativeText("Please try again few more times.");
+            msgBox.setDetailedText(reply->errorString());
+            QPushButton* okBtn = msgBox.addButton(tr("Try Again"),QMessageBox::ActionRole);
+            QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"),QMessageBox::ActionRole);
+
+            msgBox.exec();
+            if (msgBox.clickedButton() == okBtn) {
+                msgBox.QMessageBox::close();
+                this->GetApi(ui->searchBox->text());
+            }
+            else if (msgBox.clickedButton() == cancelBtn)  {
+                msgBox.QMessageBox::close();
+                this->close();
+            }
+
+
+            ui->stackedWidget->setCurrentIndex(1);
+
+            qDebug() << "Error :" << reply->errorString();
+        }
+
+        reply->deleteLater();
     }
-
-    else {
-        QMessageBox msgBox;
-        msgBox.setIcon(QMessageBox::Critical);
-        msgBox.setText("An error has occured.");
-        msgBox.setInformativeText("Please try again few more times.");
-        msgBox.setDetailedText(reply->errorString());
-        QPushButton* okBtn = msgBox.addButton(tr("Try Again"),QMessageBox::ActionRole);
-        QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"),QMessageBox::ActionRole);
-
-        msgBox.exec();
-        if (msgBox.clickedButton() == okBtn) {
-            msgBox.QMessageBox::reject();
-            this->GetApi(ui->searchBox->text()); // try again with the user's search
-        }
-        else if (msgBox.clickedButton() == cancelBtn)  {
-            msgBox.QMessageBox::reject();
-            this->close();
-        }
-
-
-        ui->stackedWidget->setCurrentIndex(1);
-
-        qDebug() << "Error :" << reply->errorString();
-    }
-
-    reply->deleteLater();
 }
-
 void TagChoose::UpdateText() {
-    ui->listWidget->clear();
-    ui->listWidget->addItems(AppData::instance().TagsSelected);
+    modelTagsHaveChosen->clear();
+    QStringList &selectedTags = AppData::instance().TagsSelected;
+    for (const QString &tagName : selectedTags) {
+        modelTagsHaveChosen->appendRow(new QStandardItem(tagName));
+    }
+    modelTagsHaveChosen->layoutChanged();
 }
 
 void TagChoose::on_searchBox_returnPressed()
@@ -166,65 +188,47 @@ void TagChoose::on_searchBox_returnPressed()
     }
 }
 
-void TagChoose::on_tableWidget_itemChanged(QTableWidgetItem *item) {
-    if (item->column() != 0) return;
+void TagChoose::onListContextMenuRequested(const QPoint &pos) {
+    QModelIndex index = ui->tagChosenMenu->indexAt(pos);
+    if (index.isValid()) {
+        int row = index.row();
 
+        QMenu menu(this);
+        QAction *deleteAction = menu.addAction("Remove this tag");
+
+        connect(deleteAction, &QAction::triggered, this, [this,row]() {
+            this->deleteSelectedTags(row);
+        });
+
+        menu.exec(ui->tagChosenMenu->mapToGlobal(pos));
+    }
+}
+
+void TagChoose::onItemChanged(QStandardItem *item) {
+    if (!item) return;
     qDebug() << "Item changed! Row:" << item->row() << "column" << item->column() << "State:" << item->checkState();
 
-    ui->tableWidget->blockSignals(true);
+    QString tagName = item->text();
 
-    QTableWidgetItem* nameItem = ui->tableWidget->item(item->row(), 1);
-    if (nameItem) {
-        QString tagName = nameItem->text();
-
-        if (item->checkState() == Qt::Checked) {
-            if (!AppData::instance().TagsSelected.contains(tagName)) {
-                AppData::instance().TagsSelected.append(tagName);
-                qDebug() << "Added tag:" << tagName;
-            }
-        } else {
-            AppData::instance().TagsSelected.removeOne(tagName);
-            qDebug() << "Removed tag:" << tagName;
+    if (item->checkState() == Qt::Checked) {
+        if (!AppData::instance().TagsSelected.contains(tagName)) {
+            AppData::instance().TagsSelected.append(tagName);
         }
-        UpdateText();
     }
-
-    ui->tableWidget->blockSignals(false);
-    qDebug() << "Finished processing row:" << item->row() << "column" << item->column() << "State:" << item->checkState();
-}
-
-void TagChoose::onListContextMenuRequested(const QPoint &pos) {
-    QListWidgetItem *item = ui->listWidget->itemAt(pos);
-    if (!item) return;
-
-    QMenu menu(this);
-    QAction *deleteAction = menu.addAction("Remove this tag");
-
-    connect(deleteAction, &QAction::triggered, this, &TagChoose::deleteSelectedTag);
-
-    ui->listWidget->setCurrentItem(item);
-
-    menu.exec(ui->listWidget->mapToGlobal(pos));
-}
-
-void TagChoose::deleteSelectedTag() {
-    QListWidgetItem *list_item = ui->listWidget->currentItem();
-    if (!list_item) return;
-
-    QString tagName = list_item->text();
-
-    AppData::instance().TagsSelected.removeOne(tagName);
-
-    auto foundItems = ui->tableWidget->findItems(tagName, Qt::MatchExactly);
-    for (auto* item : foundItems) {
-        ui->tableWidget->blockSignals(true);
-        ui->tableWidget->item(item->row(), 0)->setCheckState(Qt::Unchecked);
-        ui->tableWidget->blockSignals(false);
+    else {
+        AppData::instance().TagsSelected.removeOne(tagName);
     }
-
-    // update the ui
-    delete list_item;
     UpdateText();
+}
+
+void TagChoose::deleteSelectedTags(int row) {
+    QStandardItem *item = modelTagsHaveChosen->item(row);
+    if (item) {
+        QString name = item->text();
+        qDebug() << "Remove tag name: " + name;
+        AppData::instance().TagsSelected.removeOne(name);
+    }
+    this->modelTagsHaveChosen->removeRow(row);
 }
 
 void TagChoose::on_buttonBox_accepted()

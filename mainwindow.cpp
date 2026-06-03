@@ -22,7 +22,6 @@ MainWindow::MainWindow(QWidget *parent)
     this->setFixedSize(this->size().width(), this->size().height());
     this->m_CurPage = 0;
     this->m_fullImageExtension = "";
-
 }
 
 MainWindow::~MainWindow()
@@ -36,13 +35,15 @@ void MainWindow::EnableToggleButtons(bool enable){
     ui->saveBtn->setEnabled(enable);
 }
 
-void MainWindow::HandleErrorAndFetchAgain(QNetworkReply *reply) {
+void MainWindow::HandleErrorAndFetchAgain(QNetworkReply *reply, QString text, QString informativeText, bool isNeedForShowDetailedText) {
     this->EnableToggleButtons(true);
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Critical);
-    msgBox.setText("An error has occured.");
-    msgBox.setInformativeText("Please try again few more times.");
-    msgBox.setDetailedText(reply->errorString());
+    msgBox.setText(text);
+    msgBox.setInformativeText(informativeText);
+    if (isNeedForShowDetailedText) {
+        msgBox.setDetailedText(reply->errorString());
+    }
     QPushButton* okBtn = msgBox.addButton(tr("Ok"),QMessageBox::ActionRole);
     msgBox.exec();
 
@@ -69,14 +70,14 @@ void MainWindow::on_infoBox_clicked()
     }
     else if (selectedIndex == 1) {
         QString tip = "<b>Suggestive content:</b> includes:"
-                      "<ul> <li>lingerie</li><li>swimwear</li><li>in provocative poses<li> <li>etc.</li></ul>";
+                      "<ul> <li>lingerie</li><li>swimwear</li><li>in sexy poses<li> <li>etc.</li></ul>";
 
         ui->infoBox->setToolTip(tip);
 
         QToolTip::showText(ui->infoBox->mapToGlobal(ui->infoBox->rect().center()), tip, ui->infoBox, QRect(), 2000);
     }
     else if (selectedIndex == 2) {
-        QString tip = "<b>Adult content: </b> Includes nudity or highly sensitive material.";
+        QString tip = "<b>Adult content: </b> Includes nudity or highly sensitive material, NSFW.";
 
         ui->infoBox->setToolTip(tip);
 
@@ -114,13 +115,13 @@ void MainWindow::on_generateBtn_clicked()
         msgBox.exec();
     }
     else {
-        Fetch();
+        Fetch(1);
     }
 }
 
-void MainWindow::Fetch() {
+void MainWindow::Fetch(int add) {
     this->EnableToggleButtons(false);
-    m_CurPage++;
+    m_CurPage = m_CurPage + add;
     QString APIUrlStr;
     APIUrlStr.append("https://konachan.net/post.json?limit=50&random=1&page="); //limit 50
     APIUrlStr.append(QString::number(m_CurPage));
@@ -147,80 +148,51 @@ void MainWindow::onFetchFinished() {
     if (!reply) return;
 
     if (reply->error() == QNetworkReply::NoError){
+        qDebug() << " ko có lỗi mạng";
+        qDebug() << QString::number(this->m_AttemptLoading);
+
         QByteArray responseData = reply->readAll();
-        QJsonDocument JDoc = QJsonDocument::fromJson(responseData);
+        QJsonDocument JsonReturn = QJsonDocument::fromJson(responseData);
 
-        if (JDoc.isArray()) {
-            QJsonArray JArray = JDoc.array();
-            if (!JArray.isEmpty()) {
-                int randomIndex = QRandomGenerator::global()->bounded(JArray.size());
+        if (JsonReturn.isArray()) {
+            QJsonArray JsonArray = JsonReturn.array();
+            qDebug() << JsonArray ;
+            if (!JsonArray.isEmpty()) {
+                int randomIndex = QRandomGenerator::global()->bounded(JsonArray.size());
 
-                QJsonObject obj = JArray.at(randomIndex).toObject();
+                QJsonObject obj = JsonArray.at(randomIndex).toObject();
                 if (obj.value("jpeg_url").toString().isEmpty() == false) {
                     QString fullUrl = obj.value("jpeg_url").toString(); //full img
                     qDebug() << "jpeg_url: " << fullUrl;
                     this->DownloadFullImage(fullUrl);
                 }
-                else {
-                    this->m_CurPage = 0;
-                    QMessageBox msgBox;
-                    this->EnableToggleButtons(true);
-                    msgBox.setIcon(QMessageBox::Critical);
-                    msgBox.setText("An error has occured.");
-                    msgBox.setInformativeText("<ul>"
-                                              " <li>Your selected tags might be too specific or incompatible.</li>"
-                                              " <li>Your rating (Safe/Questionable/Explicit) might filtering all images.</li>"
-                                              " <li>Server might be busy.</li>"
-                                              " <li>You might need to loosen your tags or ratings.</li>"
-                                              "</ul>");
-                    msgBox.setStandardButtons(QMessageBox::Ok);
-                    msgBox.setDefaultButton(QMessageBox::Ok);
-                    msgBox.exec();
-                }
+            }
+            else if (m_AttemptLoading == 0) {
+                this->m_CurPage = 1;
+                this->m_AttemptLoading = 1;
+                Fetch(0);
+            }
+            else if (m_AttemptLoading == 1) {
+                qDebug() << "không tải đc do tag";
+                this->HandleErrorAndFetchAgain(reply,"An error has occured.", "Make sure that your selected tags is relatable to eachother, ...", false);
             }
         }
         else {
-            this->HandleErrorAndFetchAgain(reply);
+            qDebug() << "có lỗi mạng@!!!";
+            this->HandleErrorAndFetchAgain(reply, "An error has occured.", "Please try again few more times. Check if your network connection is okay.", true);
         }
         reply->deleteLater();
     }
 }
 void MainWindow::DownloadPreviewImage(QString url) {
-    /*
-    QNetworkRequest request((QUrl(url)));
-    request.setTransferTimeout(5000);
-    QNetworkReply *reply = this->Manager->get(request);
 
-    connect(reply, &QNetworkReply::finished, this, [=]() {
-        if (reply->error() == QNetworkReply::NoError) {
-            qDebug() << "Đang tải Preview image";
-            QPixmap pm;
-            if (pm.loadFromData(reply->readAll())){
-                ui->previewImg->setPixmap(pm.scaled(ui->previewImg->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
-                m_loadCount++;
-                if (m_loadCount >= 2) {
-                    this->EnableToggleButtons(true);
-                }
-            }
-            else {
-                qDebug() << "image is corrupted";
-            }
-        }
-        else {
-            qDebug() << "Lỗi ở Preview image!";
-            this->EnableToggleButtons(true);
-            this->HandleErrorAndFetchAgain(reply);
-        }
-        reply->deleteLater();
-    });
-    */
 }
 
 void MainWindow::DownloadFullImage(QString url) {
     QFileInfo fileInfo(url);
     this->m_fullImageExtension = fileInfo.suffix();
     QNetworkRequest request((QUrl(url)));
-    request.setTransferTimeout(5000);
+    request.setTransferTimeout(3000);
     QNetworkReply *reply = this->Manager->get(request);
 
     connect(reply, &QNetworkReply::finished, this, [=]() {
@@ -234,12 +206,12 @@ void MainWindow::DownloadFullImage(QString url) {
                 ui->previewImg->setPixmap(pm.scaled(ui->previewImg->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
             }
 
-       }
+        }
 
         else {
             qDebug() << "Lỗi ở Full image!";
             this->EnableToggleButtons(true);
-            this->HandleErrorAndFetchAgain(reply);
+            this->HandleErrorAndFetchAgain(reply, "An error has occured when we tried to download image.", "Please try again few more times.", true);
         }
         reply->deleteLater();
     });
@@ -270,3 +242,5 @@ void MainWindow::on_setWallpaperBtn_clicked()
     SetWallpaper idk;
     idk.DownloadWallpaper(this->m_fullImageData,this->m_fullImageExtension);
 }
+
+

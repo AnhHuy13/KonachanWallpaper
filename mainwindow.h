@@ -20,7 +20,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void Fetch();
+    void Fetch(int add);
 
     void DownloadPreviewImage(QString url);
 
@@ -28,7 +28,7 @@ public:
 
     void EnableToggleButtons(bool enable);
 
-    void HandleErrorAndFetchAgain(QNetworkReply *reply);
+    void HandleErrorAndFetchAgain(QNetworkReply *reply, QString text, QString informativeText, bool isNeedForShowDetailedText);
 
     QByteArray m_fullImageData;
 
@@ -45,7 +45,6 @@ private slots:
 
     void on_saveBtn_clicked();
 
-
     void on_setWallpaperBtn_clicked();
 
 private:
@@ -53,6 +52,7 @@ private:
     TagChoose* dialog;
     QNetworkAccessManager *Manager;
     int m_CurPage;
+    int m_AttemptLoading;
     int m_loadCount = 0;
     QString m_fullImageExtension;
 };

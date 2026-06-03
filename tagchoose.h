@@ -9,20 +9,19 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QMessageBox>
-#include <QTableWidgetItem>
 #include <QStringList>
 #include <QAbstractItemView>
-#include <QListWidget>
-#include <QListWidgetItem>
+#include <QStandardItem>
 #include <QMenu>
 #include <QKeyEvent>
 #include <QShortcut>
 #include <QCloseEvent>
+#include <QStandardItemModel>
+#include <QStyledItemDelegate>
 
 struct TagItem {
     bool isTicked = false;
     int id;
-    QString name;
     int count;
     int type;
 };
@@ -40,7 +39,6 @@ class TagChoose : public QDialog
 
 public:
     explicit TagChoose(QWidget *parent = nullptr);
-
     QVector<TagItem> m_tagList;
 
     ~TagChoose();
@@ -59,17 +57,17 @@ public:
 
 private slots:
 
-    void on_tableWidget_itemChanged(QTableWidgetItem *item);
-
     void onListContextMenuRequested(const QPoint &pos);
 
-    void deleteSelectedTag();
+    void deleteSelectedTags(int row);
 
     void on_searchBox_returnPressed();
 
     void on_buttonBox_accepted();
 
     void on_buttonBox_rejected();
+
+    void onItemChanged(QStandardItem *item);
 
 signals :
     void tagsUpdated();
@@ -78,6 +76,8 @@ private:
     Ui::TagChoose *ui;
     QNetworkAccessManager *Manager;
     QString lastInput;
+    QStandardItemModel *modelTagsHaveChosen;
+    QStandardItemModel *modelListTagsHave;
 };
 
 #endif // TAGCHOOSE_H
