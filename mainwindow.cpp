@@ -3,13 +3,13 @@
 #include "tagchoose.h"
 #include "setwallpaper.h"
 #include "AppData.h"
-#include <QToolTip>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    this->setWindowTitle("KonachanWallpaper");
 
     AppData::instance().lastTagsSelected.clear();
     Manager = new QNetworkAccessManager(this);
@@ -22,6 +22,21 @@ MainWindow::MainWindow(QWidget *parent)
     this->setFixedSize(this->size().width(), this->size().height());
     this->m_CurPage = 0;
     this->m_fullImageExtension = "";
+
+    QString nameSetting;
+
+#ifdef Q_OS_MAC
+    nameSetting = tr("Preferences...");
+#else
+    nameSetting = tr("Settings...");
+#endif
+
+    QAction *settingAction = new QAction(tr(qUtf8Printable(nameSetting)), this);
+    settingAction->setShortcut(QKeySequence::Preferences);
+    settingAction->setMenuRole(QAction::PreferencesRole);
+    connect(settingAction, &QAction::triggered, this, [=]() {});
+    ui->menuKonachanWallpaper->addAction(settingAction);
+
 }
 
 MainWindow::~MainWindow()

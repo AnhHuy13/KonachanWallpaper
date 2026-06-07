@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>380</width>
-    <height>456</height>
+    <height>480</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -350,6 +350,57 @@ color:black;</string>
    </widget>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>380</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <addaction name="cleanBrokeAct"/>
+    <addaction name="cleanAllAct"/>
+    <addaction name="cleanAdvanceAct"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuKonachanWallpaper">
+    <property name="title">
+     <string>KonachanWallpaper</string>
+    </property>
+   </widget>
+   <addaction name="menuKonachanWallpaper"/>
+   <addaction name="menuEdit"/>
+  </widget>
+  <action name="actionPurge_trash">
+   <property name="text">
+    <string>Purge trash</string>
+   </property>
+  </action>
+  <action name="cleanBrokeAct">
+   <property name="text">
+    <string>Cleanup Expired and Broken Images</string>
+   </property>
+  </action>
+  <action name="cleanAllAct">
+   <property name="text">
+    <string>Cleanup All Cache</string>
+   </property>
+  </action>
+  <action name="actionAdvance_search">
+   <property name="text">
+    <string>Advance Search</string>
+   </property>
+  </action>
+  <action name="cleanAdvanceAct">
+   <property name="text">
+    <string>Advanced Cache Cleanup</string>
+   </property>
+  </action>
  </widget>
  <resources>
   <include location="Resources.qrc"/>

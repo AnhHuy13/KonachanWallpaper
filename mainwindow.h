@@ -7,6 +7,8 @@
 #include <QPlainTextEdit>
 #include <QRandomGenerator>
 #include <QFileDialog>
+#include <QAction>
+#include <QToolTip>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }

@@ -59,8 +59,6 @@ private slots:
 
     void onListContextMenuRequested(const QPoint &pos);
 
-    void deleteSelectedTags(int row);
-
     void on_searchBox_returnPressed();
 
     void on_buttonBox_accepted();

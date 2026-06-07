@@ -16,6 +16,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    checkimages.cpp \
     main.cpp \
     mainwindow.cpp \
     setwallpaper.cpp \
@@ -23,6 +24,7 @@ SOURCES += \
 
 HEADERS += \
     AppData.h \
+    checkimages.h \
     mainwindow.h \
     setwallpaper.h \
     tagchoose.h

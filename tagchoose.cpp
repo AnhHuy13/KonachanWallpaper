@@ -13,6 +13,8 @@ TagChoose::TagChoose(QWidget *parent) :
     this->setFocus();
     this->setFixedSize(this->size().width(), this->size().height());
     this->setAttribute(Qt::WA_DeleteOnClose);
+    this->setWindowTitle("Choose tags [*]");
+    this->setWindowModified(false);
     Manager = new QNetworkAccessManager(this);
 
     QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Return), ui->searchBox);
@@ -24,7 +26,12 @@ TagChoose::TagChoose(QWidget *parent) :
     ui->listView->setModel(modelListTagsHave);
     ui->tagChosenMenu->setModel(modelTagsHaveChosen);
     connect(modelListTagsHave, &QStandardItemModel::itemChanged, this, &TagChoose::onItemChanged);
-    //    ui->listView->setLayoutMode(QListView::Batched);
+    ui->tagChosenMenu->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->tagChosenMenu, &QListView::customContextMenuRequested, this, &TagChoose::onListContextMenuRequested);
+
+    ui->listView->setUniformItemSizes(true);
+    ui->listView->setLayoutMode(QListView::Batched);
+    ui->listView->setBatchSize(50);
 
     lastInput = "";
 
@@ -47,13 +54,16 @@ void TagChoose::GetApi(QString SearchTag) {
     ui->stackedWidget->setCurrentIndex(0);
     ui->progressBar->setRange(0, 0);
 
+    int limit = 1500;
+
     QUrl APIUrl;
     if (SearchTag.isEmpty()) {
-        APIUrl = QUrl("https://konachan.net/tag.json?order=count&limit=5000");
+        APIUrl = QUrl(QString("https://konachan.net/tag.json?order=count&limit=%1").arg(limit));
+        qDebug() << APIUrl;
     }
     else {
-        QString urlText = QString("https://konachan.net/tag.json?name=*%1*&limit=1000&order=count").arg(SearchTag);
-        APIUrl = QUrl(urlText);
+        APIUrl = QUrl(QString("https://konachan.net/tag.json?name=*%1*&limit=1000&order=count").arg(SearchTag));
+        qDebug() << APIUrl;
     }
 
     QNetworkRequest request(APIUrl);
@@ -84,24 +94,18 @@ void TagChoose::onSearchFinished() {
 
             modelListTagsHave->blockSignals(true);
 
-            for (int i = 0; i < JsonArray.size(); ++i) {
+            for (int i = 0; i < JsonArray.size(); i++) {
                 QJsonObject tagObject = JsonArray.at(i).toObject();
                 QString tagName = tagObject.value("name").toString();
-                qDebug() << tagName;
 
                 QStandardItem *it = modelListTagsHave->item(i);
-
-                if (it == nullptr) {
-                    qDebug() << "nullptr";
-                } else {
-                    qDebug() << "real";
-                }
 
                 if (it == nullptr) {
                     it = new QStandardItem();
                     it->setCheckable(true);
                     it->setText(tagName);
 
+                    /* nếu tag đã chọn có chứa tagName thì để thành đã chọn, còn không thì để không */
                     if (selectedTagsSet.contains(tagName)) {
                         it->setCheckState(Qt::Checked);
                     } else {
@@ -143,7 +147,12 @@ void TagChoose::onSearchFinished() {
             msgBox.setIcon(QMessageBox::Critical);
             msgBox.setText("An error has occured.");
             msgBox.setInformativeText("Please try again few more times.");
-            msgBox.setDetailedText(reply->errorString());
+
+            QString errorDetail = QString("Error code: %1\nError string: %2")
+                                  .arg(reply->error())
+                                  .arg(reply->errorString());
+
+            msgBox.setDetailedText(errorDetail);
             QPushButton* okBtn = msgBox.addButton(tr("Try Again"),QMessageBox::ActionRole);
             QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"),QMessageBox::ActionRole);
 
@@ -177,41 +186,74 @@ void TagChoose::UpdateText() {
 
 void TagChoose::on_searchBox_returnPressed()
 {
-    // the konachan tags using tags name like "abc_xyz",... prevent the case user's search has space
-    // characters and replace it to underscore then GetApi() it
-
-    QString input = ui->searchBox->text();
-    if (lastInput != input) {
+    /*  konachan xài tag kiểu như "hatsune_miku" chứ ko phải "hatsune miku"
+        nên thành ra là tự đổi từ khoảng trắng thành dấu "_" là đc. khỏi cần ngdung sửa lại
+        cũng như simplified cho bỏ khoảng trắng thừa
+    */
+    QString input = ui->searchBox->text().simplified();
+    if (lastInput.simplified() != input) {
         input.replace(" ","_");
         ui->searchBox->setText(input);
         GetApi((input));
     }
 }
-
 void TagChoose::onListContextMenuRequested(const QPoint &pos) {
-    QModelIndex index = ui->tagChosenMenu->indexAt(pos);
-    if (index.isValid()) {
-        int row = index.row();
+    QListView *senderView = qobject_cast<QListView*>(sender());
+    if (!senderView) return;
 
-        QMenu menu(this);
-        QAction *deleteAction = menu.addAction("Remove this tag");
+    QModelIndex index = senderView->indexAt(pos);
+    if (!index.isValid()) return;
 
-        connect(deleteAction, &QAction::triggered, this, [this,row]() {
-            this->deleteSelectedTags(row);
-        });
+    QMenu menu(this);
+    QAction *removeAction = menu.addAction("Remove this tag");
 
-        menu.exec(ui->tagChosenMenu->mapToGlobal(pos));
-    }
+    connect(removeAction, &QAction::triggered, this, [this, index, senderView]() {
+        QStandardItem *item = nullptr;
+
+        if (senderView == ui->tagChosenMenu) {
+            item = modelTagsHaveChosen->itemFromIndex(index);
+        }
+        else {
+            item = modelListTagsHave->itemFromIndex(index);
+        }
+
+        if (item) {
+            QString name = item->text();
+            qDebug() << "xoá tag:" << name;
+
+            AppData::instance().TagsSelected.removeOne(name);
+
+            QList<QStandardItem*> itemsListTagHaveChose = modelTagsHaveChosen->findItems(name, Qt::MatchExactly);
+            for (int i = 0; i < itemsListTagHaveChose.size(); ++i) {
+                QStandardItem* it = itemsListTagHaveChose.at(i);
+                modelTagsHaveChosen->removeRow(it->row());
+            }
+
+            QList<QStandardItem*> itemsListTagAvaiable = modelListTagsHave->findItems(name, Qt::MatchExactly);
+            for (int i = 0; i < itemsListTagAvaiable.size(); ++i) {
+                QStandardItem* it = itemsListTagAvaiable.at(i);
+                it->setCheckState(Qt::Unchecked);
+            }
+        }
+        else {
+            qDebug() << "item=nullptr";
+        }
+    });
+
+    menu.exec(senderView->mapToGlobal(pos));
 }
 
 void TagChoose::onItemChanged(QStandardItem *item) {
+    QSet<QString> selectedTagsSet = QSet<QString>(AppData::instance().TagsSelected.begin(), AppData::instance().TagsSelected.end());
+
     if (!item) return;
-    qDebug() << "Item changed! Row:" << item->row() << "column" << item->column() << "State:" << item->checkState();
+    this->setWindowModified(true);
+    qDebug() << "thay đổi: hàng:" << item->row() << "col" << item->column() << "State:" << item->checkState();
 
     QString tagName = item->text();
 
     if (item->checkState() == Qt::Checked) {
-        if (!AppData::instance().TagsSelected.contains(tagName)) {
+        if (!selectedTagsSet.contains(tagName)) {
             AppData::instance().TagsSelected.append(tagName);
         }
     }
@@ -219,16 +261,6 @@ void TagChoose::onItemChanged(QStandardItem *item) {
         AppData::instance().TagsSelected.removeOne(tagName);
     }
     UpdateText();
-}
-
-void TagChoose::deleteSelectedTags(int row) {
-    QStandardItem *item = modelTagsHaveChosen->item(row);
-    if (item) {
-        QString name = item->text();
-        qDebug() << "Remove tag name: " + name;
-        AppData::instance().TagsSelected.removeOne(name);
-    }
-    this->modelTagsHaveChosen->removeRow(row);
 }
 
 void TagChoose::on_buttonBox_accepted()
@@ -246,6 +278,7 @@ void TagChoose::closeEvent(QCloseEvent *event)
 {
     if (AppData::instance().TagsSelected.isEmpty() || AppData::instance().TagsSelected == AppData::instance().lastTagsSelected) {
         event->accept();
+        this->setWindowModified(false);
         emit tagsUpdated();
         this->done(QDialog::Accepted);
         return;
@@ -274,7 +307,7 @@ void TagChoose::closeEvent(QCloseEvent *event)
             this->done(QDialog::Accepted);
         }
         else if (msgBox.clickedButton() == cancelBtn){
-            // when user press cancel or X in message box
+            //bấm x cũng tính luôn
             event->ignore();
         }
     }
