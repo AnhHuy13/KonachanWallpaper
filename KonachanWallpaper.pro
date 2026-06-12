@@ -19,6 +19,7 @@ SOURCES += \
     checkimages.cpp \
     main.cpp \
     mainwindow.cpp \
+    setting.cpp \
     setwallpaper.cpp \
     tagchoose.cpp
 
@@ -26,11 +27,13 @@ HEADERS += \
     AppData.h \
     checkimages.h \
     mainwindow.h \
+    setting.h \
     setwallpaper.h \
     tagchoose.h
 
 FORMS += \
     mainwindow.ui \
+    setting.ui \
     tagchoose.ui
 
 TRANSLATIONS += \
@@ -46,4 +49,4 @@ RESOURCES += \
 
 QT += core gui network widgets
 
-CONFIG += force_debug_info
+QMAKE_MAKEFLAGS += -j6

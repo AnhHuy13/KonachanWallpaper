@@ -1,8 +1,10 @@
 #include "mainwindow.h"
+#include "qstatusbar.h"
 #include "ui_mainwindow.h"
 #include "tagchoose.h"
 #include "setwallpaper.h"
 #include "AppData.h"
+#include "setting.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -34,14 +36,22 @@ MainWindow::MainWindow(QWidget *parent)
     QAction *settingAction = new QAction(tr(qUtf8Printable(nameSetting)), this);
     settingAction->setShortcut(QKeySequence::Preferences);
     settingAction->setMenuRole(QAction::PreferencesRole);
-    connect(settingAction, &QAction::triggered, this, [=]() {});
-    ui->menuKonachanWallpaper->addAction(settingAction);
 
+    connect(settingAction, &QAction::triggered, this, [=]() {
+        setting settingWindow(this);
+        settingWindow.exec();
+    });
+
+    ui->menuKonachanWallpaper->addAction(settingAction);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::LoadSettings() {
+    config = setting::Init();
 }
 
 void MainWindow::EnableToggleButtons(bool enable){

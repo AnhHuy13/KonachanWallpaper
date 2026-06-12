@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QFile>
 #include "tagchoose.h"
+#include "setting.h"
 #include <QPlainTextEdit>
 #include <QRandomGenerator>
 #include <QFileDialog>
@@ -32,6 +33,8 @@ public:
 
     void HandleErrorAndFetchAgain(QNetworkReply *reply, QString text, QString informativeText, bool isNeedForShowDetailedText);
 
+    void LoadSettings();
+
     QByteArray m_fullImageData;
 
 private slots:
@@ -57,5 +60,7 @@ private:
     int m_AttemptLoading;
     int m_loadCount = 0;
     QString m_fullImageExtension;
+
+    SettingProperties config;
 };
 #endif // MAINWINDOW_H

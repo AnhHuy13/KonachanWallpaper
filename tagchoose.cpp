@@ -1,9 +1,7 @@
 #include "tagchoose.h"
 #include "ui_tagchoose.h"
-#include <iostream>
-#include <vector>
-#include <stdio.h>
 #include "AppData.h"
+#include "checkimages.h"
 
 TagChoose::TagChoose(QWidget *parent) :
     QDialog(parent),
@@ -34,6 +32,8 @@ TagChoose::TagChoose(QWidget *parent) :
     ui->listView->setBatchSize(50);
 
     lastInput = "";
+
+
 
 }
 

@@ -5,5 +5,10 @@
         <file>Search.png</file>
         <file>Information.png</file>
     </qresource>
-    <qresource prefix="/qss"/>
+    <qresource prefix="/logo">
+        <file>logo_64x64.png</file>
+        <file>logo_256x256.png</file>
+        <file>logo_512x512.png</file>
+        <file>logo_32x32.png</file>
+    </qresource>
 </RCC>
