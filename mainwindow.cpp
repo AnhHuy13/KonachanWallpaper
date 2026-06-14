@@ -281,14 +281,12 @@ void MainWindow::on_saveBtn_clicked()
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save image"), "", tr("Images (*.jpg *.png *.jpeg)"));
 
     if (!fileName.isEmpty()) {
-        this->statusBar()->showMessage("Saving image...");
         QImage img = QImage::fromData(m_fullImageData);
         if (!img.isNull()) {
             img.save(fileName);
-            this->statusBar()->showMessage("Image saved successfully at "+ fileName, 3000);
         }
         else {
-            QMessageBox::critical(this, "Error", "Could not save file");
+            QMessageBox::critical(this, tr("Error"), tr("Could not save file"));
         }
     }
 }

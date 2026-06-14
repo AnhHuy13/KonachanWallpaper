@@ -14,7 +14,7 @@ setting::setting(QWidget *parent)
     QSettings settings(settingsFile, QSettings::IniFormat);
 
     ui->enableCache->setChecked(settings.value(KEY_IS_STORE_CACHE).toBool());
-    ui->wallpaperLocationLbl->setText("Location:" + (settings.value(KEY_PATH_CACHE).toString()));
+    ui->wallpaperLocationLbl->setText(tr("Location:") + (settings.value(KEY_PATH_CACHE).toString()));
 
     setting::directoryChoose = settings.value(KEY_PATH_CACHE).toString();
 
@@ -139,9 +139,9 @@ void setting::on_buttonBox_rejected()
 
 void setting::on_changeWallpaperLocationBtn_clicked()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, "Choose a folder", QDir::homePath());
+    QString dir = QFileDialog::getExistingDirectory(this, tr("Choose a folder"), QDir::homePath());
     if (!dir.isEmpty()) {
         setting::directoryChoose = dir;
-        ui->wallpaperLocationLbl->setText("Location:" + setting::directoryChoose);
+        ui->wallpaperLocationLbl->setText(tr("Location:") + setting::directoryChoose);
     }
 }
