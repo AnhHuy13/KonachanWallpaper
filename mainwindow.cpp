@@ -5,6 +5,7 @@
 #include "setwallpaper.h"
 #include "AppData.h"
 #include "setting.h"
+#include "checkimages.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -12,6 +13,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     this->setWindowTitle("KonachanWallpaper");
+
+    if (ui->centralwidget->layout()) {
+        ui->centralwidget->layout()->setSizeConstraint(QLayout::SetFixedSize);
+    }
+
+    this->setMinimumSize(this->sizeHint());
+    this->setMaximumSize(this->sizeHint());
 
     AppData::instance().lastTagsSelected.clear();
     Manager = new QNetworkAccessManager(this);
@@ -21,7 +29,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->safetyBox->setItemData(2,"explicit");
 
     this->setFocus();
-    this->setFixedSize(this->size().width(), this->size().height());
     this->m_CurPage = 0;
     this->m_fullImageExtension = "";
 
@@ -43,6 +50,8 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     ui->menuKonachanWallpaper->addAction(settingAction);
+
+    this->LoadSettings();
 }
 
 MainWindow::~MainWindow()
@@ -51,7 +60,10 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::LoadSettings() {
-    config = setting::Init();
+    config = setting::ReadData();
+    if (config.isAutoClean == true) {
+        checkimages::CleanUpImage(config.pathCache, config.autoCleanSec);
+    }
 }
 
 void MainWindow::EnableToggleButtons(bool enable){
@@ -160,9 +172,21 @@ void MainWindow::Fetch(int add) {
     APIUrl = QUrl(APIUrlStr);
 
     QNetworkRequest request(APIUrl);
-    request.setRawHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36 OPR/65.0.3467.78 (Edition Campaign 70)");
-    request.setRawHeader("Referer", "https://konachan.net/");
+
+    request.setRawHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+    request.setAttribute(QNetworkRequest::Http2AllowedAttribute, true);
+
     QNetworkReply *reply = this->Manager->get(request);
+    QShortcut *escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), reply); // 'reply' is the parent!
+    escShortcut->setContext(Qt::ApplicationShortcut);
+
+    connect(escShortcut, &QShortcut::activated, reply, [reply]() {
+        qDebug() << "esc detected";
+        if (reply->isRunning()) {
+            reply->abort();
+            qDebug() << "reply aborted";
+        }
+    });
 
     connect(reply, &QNetworkReply::finished, this, &MainWindow::onFetchFinished);
 }
@@ -171,18 +195,25 @@ void MainWindow::onFetchFinished() {
     qDebug() << "is loading";
     QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
     if (!reply) return;
-
+    if (reply->error() == QNetworkReply::OperationCanceledError) {
+        qDebug() << "da ngat ket noi mang";
+        this->EnableToggleButtons(true);
+        reply->deleteLater();
+        return;
+    }
     if (reply->error() == QNetworkReply::NoError){
         qDebug() << " ko có lỗi mạng";
-        qDebug() << QString::number(this->m_AttemptLoading);
+        qDebug() << "m_AttemptLoading: " + QString::number(this->m_AttemptLoading);
 
         QByteArray responseData = reply->readAll();
+        qDebug() << responseData;
         QJsonDocument JsonReturn = QJsonDocument::fromJson(responseData);
 
         if (JsonReturn.isArray()) {
             QJsonArray JsonArray = JsonReturn.array();
-            qDebug() << JsonArray ;
+            qDebug() << JsonArray.isEmpty();
             if (!JsonArray.isEmpty()) {
+                this->m_AttemptLoading = 0;
                 int randomIndex = QRandomGenerator::global()->bounded(JsonArray.size());
 
                 QJsonObject obj = JsonArray.at(randomIndex).toObject();
@@ -194,17 +225,17 @@ void MainWindow::onFetchFinished() {
             }
             else if (m_AttemptLoading == 0) {
                 this->m_CurPage = 1;
-                this->m_AttemptLoading = 1;
                 Fetch(0);
+                this->m_AttemptLoading = 1;
             }
             else if (m_AttemptLoading == 1) {
                 qDebug() << "không tải đc do tag";
-                this->HandleErrorAndFetchAgain(reply,"An error has occured.", "Make sure that your selected tags is relatable to eachother, ...", false);
+                this->HandleErrorAndFetchAgain(reply,tr("An error has occured."), tr("Make sure that your selected tags is relatable to eachother, ..."), false);
             }
         }
         else {
             qDebug() << "có lỗi mạng@!!!";
-            this->HandleErrorAndFetchAgain(reply, "An error has occured.", "Please try again few more times. Check if your network connection is okay.", true);
+            this->HandleErrorAndFetchAgain(reply, tr("An error has occured."), tr("Please try again few more times. Check if your network connection is okay."), true);
         }
         reply->deleteLater();
     }
@@ -236,7 +267,7 @@ void MainWindow::DownloadFullImage(QString url) {
         else {
             qDebug() << "Lỗi ở Full image!";
             this->EnableToggleButtons(true);
-            this->HandleErrorAndFetchAgain(reply, "An error has occured when we tried to download image.", "Please try again few more times.", true);
+            this->HandleErrorAndFetchAgain(reply, tr("An error has occured when we tried to download image."), tr("Please try again few more times."), true);
         }
         reply->deleteLater();
     });
@@ -265,7 +296,7 @@ void MainWindow::on_saveBtn_clicked()
 void MainWindow::on_setWallpaperBtn_clicked()
 {
     SetWallpaper idk;
-    idk.DownloadWallpaper(this->m_fullImageData,this->m_fullImageExtension);
+    idk.DownloadWallpaper(this->m_fullImageData,this->m_fullImageExtension,config.isStoreCache, config.pathCache);
 }
 
 

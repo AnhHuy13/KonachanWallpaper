@@ -1,27 +1,24 @@
 #include "setwallpaper.h"
+#include "AppData.h"
+#include "qcheckbox.h"
 #ifdef Q_OS_WIN
 #include <windows.h>
 #include <winuser.h>
 #endif
 
-void SetWallpaper::DownloadWallpaper(QByteArray img, QString extension) {
+void SetWallpaper::DownloadWallpaper(QByteArray img, QString extension, bool isCache, QString directory) {
     if (img.isEmpty()) return;
 
-    QString picturePath = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
-    QDir dir(picturePath);
 
-    if (!dir.exists("KonachanWallpapers")) {
-        dir.mkdir("KonachanWallpapers");
-    }
+    QDir dir(directory);
 
-    QString filePath = picturePath + "/KonachanWallpapers/" + QDateTime::currentDateTime().toString("dd-MM-yyyy_hh-mm-ss") +"." + extension;
+    QString filePath = directory + "/" + QDateTime::currentDateTime().toString("dd-MM-yyyy_hh-mm-ss") +"." + extension;
     QFile file(filePath);
 
     if (file.open(QIODevice::WriteOnly)) {
         file.write(img);
         file.close();
-        setDesktopWallpaper(filePath);
-
+        setDesktopWallpaper(filePath, isCache);
     }
 }
 
@@ -38,11 +35,36 @@ QString getDesktopEnvironment() {
 
 void SetWallpaper::setDesktopWallpaperFailed(QString path) {
     QMessageBox msgBox;
-    msgBox.setText("Sorry, your OS or Desktop Environment isn't supported yet...");
-    msgBox.setInformativeText("Here is your image path file: "+path+"  Please manually set the wallpaper. Sorry for this inconvenience!");
+    msgBox.setText(msgBox.tr("Sorry, your OS or Desktop Environment isn't supported yet..."));
+    msgBox.setInformativeText(msgBox.tr("Here is your image path file: ")+path+msgBox.tr("  Please manually set the wallpaper."));
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.setDefaultButton(QMessageBox::Ok);
-    int ret = msgBox.exec();
+    msgBox.exec();
+}
+
+void SetWallpaper::setDesktopWallpaperSuccessfully(QString path, bool isCache) {
+    if (!isCache) {
+        if (QFile::remove(path)) {
+            qDebug() << "file " + path + " removed";
+        } else {
+            if (!AppData::instance().ignoreCacheErrors) {
+                QMessageBox msgBox;
+
+                QCheckBox *ignoreCheck = new QCheckBox(tr("Ignore future cache errors"), &msgBox);
+                msgBox.setCheckBox(ignoreCheck);
+
+                msgBox.setIcon(QMessageBox::Critical);
+                msgBox.setText("Can't remove cache file.");
+                msgBox.setStandardButtons(QMessageBox::Ok);
+                msgBox.setDefaultButton(QMessageBox::Ok);
+                msgBox.exec();
+
+                if (ignoreCheck->isChecked()) {
+                    AppData::instance().ignoreCacheErrors = true;
+                }
+            }
+        }
+    }
 }
 
 bool SetWallpaper::runCommand(const QString& program, const QStringList& args) {
@@ -51,7 +73,7 @@ bool SetWallpaper::runCommand(const QString& program, const QStringList& args) {
     return process.waitForFinished() && (process.exitCode() == 0);
 }
 
-void SetWallpaper::setDesktopWallpaper(QString path) {
+void SetWallpaper::setDesktopWallpaper(QString path, bool isCache) {
 
 #ifdef Q_OS_DARWIN
     QString filePath = QDir::toNativeSeparators(path);
@@ -118,14 +140,15 @@ void SetWallpaper::setDesktopWallpaper(QString path) {
 
     QString filePath = QDir::toNativeSeparators(path);
     if (SetWallpaper::runCommand("feh", {"--bg-scale", filePath}) != 0) {
-        emit wallpaperSettingFailed(filePath);
+        emit SetWallpaper::setDesktopWallpaperFailed(filePath);
     }
 
 #else
 
-    #error "OS or DE isn't supported yet..."
+#error "OS or DE isn't supported yet..."
     QString filePath = QDir::toNativeSeparators(path);
     emit SetWallpaper::setDesktopWallpaperFailed(filePath);
 
 #endif
+    emit SetWallpaper::setDesktopWallpaperSuccessfully(filePath, isCache);
 }

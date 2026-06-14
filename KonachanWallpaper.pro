@@ -50,3 +50,5 @@ RESOURCES += \
 QT += core gui network widgets
 
 QMAKE_MAKEFLAGS += -j6
+
+DISTFILES += qtconfig.json

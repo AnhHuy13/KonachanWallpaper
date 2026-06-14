@@ -11,6 +11,7 @@ public:
     }
     QStringList TagsSelected;
     QStringList lastTagsSelected;
+    bool ignoreCacheErrors = false;
 private:
     AppData() {}
 };

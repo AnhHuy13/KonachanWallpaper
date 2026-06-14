@@ -8,33 +8,33 @@ TagChoose::TagChoose(QWidget *parent) :
     ui(new Ui::TagChoose)
 {
     ui->setupUi(this);
+
     this->setFocus();
     this->setFixedSize(this->size().width(), this->size().height());
     this->setAttribute(Qt::WA_DeleteOnClose);
-    this->setWindowTitle("Choose tags [*]");
+    this->setWindowTitle(tr("Choose tags [*]"));
     this->setWindowModified(false);
+
     Manager = new QNetworkAccessManager(this);
-
-    QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Return), ui->searchBox);
-    connect(shortcut, &QShortcut::activated, this, &TagChoose::on_searchBox_returnPressed);
-    connect(ui->searchBtn, &QPushButton::clicked, this, &TagChoose::on_searchBox_returnPressed);
-
     modelListTagsHave = new QStandardItemModel(this);
     modelTagsHaveChosen = new QStandardItemModel(this);
-    ui->listView->setModel(modelListTagsHave);
-    ui->tagChosenMenu->setModel(modelTagsHaveChosen);
-    connect(modelListTagsHave, &QStandardItemModel::itemChanged, this, &TagChoose::onItemChanged);
-    ui->tagChosenMenu->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(ui->tagChosenMenu, &QListView::customContextMenuRequested, this, &TagChoose::onListContextMenuRequested);
 
+    QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_Return), ui->searchBox);
+
+    ui->listView->setModel(modelListTagsHave);
     ui->listView->setUniformItemSizes(true);
     ui->listView->setLayoutMode(QListView::Batched);
     ui->listView->setBatchSize(50);
 
+    ui->tagChosenMenu->setModel(modelTagsHaveChosen);
+    ui->tagChosenMenu->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    connect(shortcut, &QShortcut::activated, this, &TagChoose::on_searchBox_returnPressed);
+    connect(ui->searchBtn, &QPushButton::clicked, this, &TagChoose::on_searchBox_returnPressed);
+    connect(modelListTagsHave, &QStandardItemModel::itemChanged, this, &TagChoose::onItemChanged);
+    connect(ui->tagChosenMenu, &QListView::customContextMenuRequested, this, &TagChoose::onListContextMenuRequested);
+
     lastInput = "";
-
-
-
 }
 
 
@@ -145,8 +145,8 @@ void TagChoose::onSearchFinished() {
         else {
             QMessageBox msgBox;
             msgBox.setIcon(QMessageBox::Critical);
-            msgBox.setText("An error has occured.");
-            msgBox.setInformativeText("Please try again few more times.");
+            msgBox.setText(tr("An error has occured."));
+            msgBox.setInformativeText(tr("Please try again few more times."));
 
             QString errorDetail = QString("Error code: %1\nError string: %2")
                                   .arg(reply->error())
@@ -205,7 +205,7 @@ void TagChoose::onListContextMenuRequested(const QPoint &pos) {
     if (!index.isValid()) return;
 
     QMenu menu(this);
-    QAction *removeAction = menu.addAction("Remove this tag");
+    QAction *removeAction = menu.addAction(tr("Remove this tag"));
 
     connect(removeAction, &QAction::triggered, this, [this, index, senderView]() {
         QStandardItem *item = nullptr;
@@ -285,8 +285,8 @@ void TagChoose::closeEvent(QCloseEvent *event)
     }
     else {
         QMessageBox msgBox;
-        msgBox.setText("You have chosen your tags.");
-        msgBox.setInformativeText("Do you want to save your tags?");
+        msgBox.setText(tr("You have chosen your tags."));
+        msgBox.setInformativeText(tr("Do you want to save your tags?"));
 
         QPushButton* noSaveBtn = msgBox.addButton(tr("Don't Save"), QMessageBox::ActionRole);
         QPushButton* cancelBtn = msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);

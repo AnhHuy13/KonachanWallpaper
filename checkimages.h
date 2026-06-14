@@ -12,9 +12,9 @@
 class checkimages
 {
 public:
-    void CleanUpImage(QString directory, int time);
+    static int CleanUpImage(QString directory, int time);
 
-    bool IsImageCorrupted(QString filePath);
+    static bool IsImageCorrupted(QString filePath);
 };
 
 #endif // CHECKIMAGES_H

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>380</width>
-    <height>380</height>
+    <width>318</width>
+    <height>404</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,14 +28,17 @@
       </property>
       <property name="maximumSize">
        <size>
-        <width>368</width>
+        <width>300</width>
         <height>71</height>
        </size>
       </property>
       <property name="font">
        <font>
-        <pointsize>12</pointsize>
+        <pointsize>-1</pointsize>
        </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">font-size:13px;</string>
       </property>
       <property name="locale">
        <locale language="English" country="UnitedStates"/>
@@ -43,132 +46,132 @@
       <property name="title">
        <string>Content Safety</string>
       </property>
-      <widget class="QWidget" name="layoutWidget">
-       <property name="geometry">
-        <rect>
-         <x>30</x>
-         <y>30</y>
-         <width>301</width>
-         <height>31</height>
-        </rect>
-       </property>
-       <property name="locale">
-        <locale language="English" country="UnitedStates"/>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QLabel" name="label">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>43</width>
-            <height>25</height>
-           </size>
-          </property>
-          <property name="locale">
-           <locale language="English" country="UnitedStates"/>
-          </property>
-          <property name="text">
-           <string>Level:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QComboBox" name="safetyBox">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>226</width>
-            <height>25</height>
-           </size>
-          </property>
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-          <property name="locale">
-           <locale language="English" country="UnitedStates"/>
-          </property>
-          <item>
-           <property name="text">
-            <string>Safe</string>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Questionable (+15)</string>
+           <property name="maximumSize">
+            <size>
+             <width>43</width>
+             <height>25</height>
+            </size>
            </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Explicit (+18)</string>
+           <property name="styleSheet">
+            <string notr="true">font-size:13px;</string>
            </property>
-          </item>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="infoBox">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>25</width>
-            <height>25</height>
-           </size>
-          </property>
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-          <property name="locale">
-           <locale language="English" country="UnitedStates"/>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset resource="Resources.qrc">
-            <normaloff>:/icons/Information.png</normaloff>:/icons/Information.png</iconset>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
+           <property name="locale">
+            <locale language="English" country="UnitedStates"/>
+           </property>
+           <property name="text">
+            <string>Level:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="safetyBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>226</width>
+             <height>25</height>
+            </size>
+           </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
+           <property name="locale">
+            <locale language="English" country="UnitedStates"/>
+           </property>
+           <item>
+            <property name="text">
+             <string>Safe</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Questionable (+15)</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Explicit (+18)</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="infoBox">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>25</width>
+             <height>25</height>
+            </size>
+           </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
+           <property name="locale">
+            <locale language="English" country="UnitedStates"/>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="Resources.qrc">
+             <normaloff>:/icons/Information.png</normaloff>:/icons/Information.png</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </widget>
     </item>
     <item>
      <widget class="QGroupBox" name="groupBox1_2">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="sizePolicy">
        <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
         <horstretch>0</horstretch>
-        <verstretch>1</verstretch>
+        <verstretch>0</verstretch>
        </sizepolicy>
       </property>
       <property name="maximumSize">
        <size>
-        <width>368</width>
-        <height>100</height>
+        <width>300</width>
+        <height>110</height>
        </size>
       </property>
       <property name="font">
        <font>
-        <pointsize>12</pointsize>
+        <pointsize>-1</pointsize>
        </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">font-size:13px;</string>
       </property>
       <property name="locale">
        <locale language="English" country="UnitedStates"/>
@@ -179,24 +182,41 @@
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_2">
+         <property name="leftMargin">
+          <number>18</number>
+         </property>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,2">
            <property name="spacing">
             <number>0</number>
            </property>
            <item>
             <widget class="QLabel" name="label_2">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
+             <property name="minimumSize">
+              <size>
+               <width>130</width>
+               <height>0</height>
+              </size>
+             </property>
              <property name="maximumSize">
               <size>
-               <width>72</width>
-               <height>35</height>
+               <width>16777215</width>
+               <height>58</height>
               </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>-1</pointsize>
+              </font>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">font-size: 13px;</string>
              </property>
              <property name="locale">
               <locale language="English" country="UnitedStates"/>
@@ -205,14 +225,14 @@
               <string>Tags you have chose:</string>
              </property>
              <property name="wordWrap">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QPlainTextEdit" name="txtChosenTags">
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <sizepolicy hsizetype="Fixed" vsizetype="Maximum">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -220,7 +240,7 @@
              <property name="maximumSize">
               <size>
                <width>207</width>
-               <height>40</height>
+               <height>59</height>
               </size>
              </property>
              <property name="readOnly">
@@ -298,14 +318,14 @@
         </property>
         <property name="font">
          <font>
-          <pointsize>12</pointsize>
+          <pointsize>-1</pointsize>
          </font>
         </property>
         <property name="cursor">
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
         <property name="styleSheet">
-         <string notr="true"/>
+         <string notr="true">font-size:13px;</string>
         </property>
         <property name="locale">
          <locale language="English" country="UnitedStates"/>
@@ -322,7 +342,7 @@
       <item>
        <widget class="QLabel" name="previewImg">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -330,13 +350,13 @@
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>90</height>
+          <height>98</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>210</width>
-          <height>130</height>
+          <width>213</width>
+          <height>143</height>
          </size>
         </property>
         <property name="font">
@@ -366,19 +386,19 @@ color:black;</string>
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,1">
       <item>
        <widget class="QPushButton" name="setWallpaperBtn">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
         <property name="maximumSize">
          <size>
-          <width>181</width>
-          <height>18</height>
+          <width>16777215</width>
+          <height>22</height>
          </size>
         </property>
         <property name="cursor">
@@ -399,15 +419,15 @@ color:black;</string>
       <item>
        <widget class="QPushButton" name="saveBtn">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
         <property name="maximumSize">
          <size>
-          <width>181</width>
-          <height>18</height>
+          <width>16777215</width>
+          <height>22</height>
          </size>
         </property>
         <property name="cursor">
@@ -434,7 +454,7 @@ color:black;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>380</width>
+     <width>318</width>
      <height>17</height>
     </rect>
    </property>
@@ -444,7 +464,6 @@ color:black;</string>
     </property>
     <addaction name="cleanBrokeAct"/>
     <addaction name="cleanAllAct"/>
-    <addaction name="cleanAdvanceAct"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuKonachanWallpaper">

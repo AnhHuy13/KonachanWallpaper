@@ -10,6 +10,7 @@
 #include <QFileDialog>
 #include <QAction>
 #include <QToolTip>
+#include <QShortcut>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -57,7 +58,7 @@ private:
     TagChoose* dialog;
     QNetworkAccessManager *Manager;
     int m_CurPage;
-    int m_AttemptLoading;
+    int m_AttemptLoading = 0;
     int m_loadCount = 0;
     QString m_fullImageExtension;
 

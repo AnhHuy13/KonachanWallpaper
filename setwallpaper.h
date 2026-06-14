@@ -8,14 +8,16 @@
 #include <QProcessEnvironment>
 #include <QProcess>
 #include <QDateTime>
+#include <QCheckBox>
+#include "AppData.h"
 
 class SetWallpaper
 {
 public:
-    void DownloadWallpaper(QByteArray img, QString extension);
+    void DownloadWallpaper(QByteArray img, QString extension, bool isCache, QString directory);
 
 private:
-    void setDesktopWallpaper(QString path);
+    void setDesktopWallpaper(QString path, bool isCache);
 
     QString getDesktopEnvironment();
 
@@ -23,6 +25,8 @@ private:
 
     void setDesktopWallpaperFailed(QString path);
 
+signals:
+    void setDesktopWallpaperSuccessfully(QString path, bool isCache);
 };
 
 #endif // SETWALLPAPER_H

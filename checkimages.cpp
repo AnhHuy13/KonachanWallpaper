@@ -1,6 +1,6 @@
 #include "checkimages.h"
 
-void checkimages::CleanUpImage(QString directory, int time)
+int checkimages::CleanUpImage(QString directory, int time)
 {
     QDir dir(directory);
 
@@ -11,12 +11,15 @@ void checkimages::CleanUpImage(QString directory, int time)
 
     QFileInfoList fileList = dir.entryInfoList();
 
+    int fileRemoved = 0;
     for (int i = 0; i < fileList.size(); ++i) {
         QFileInfo file = fileList.at(i);
         if (extension.contains(file.suffix().toUpper()) && file.lastModified() < timeDelete && IsImageCorrupted(file.absoluteFilePath())) {
             QFile::moveToTrash(file.absoluteFilePath());
+            fileRemoved++;
         }
     }
+    return fileRemoved;
 }
 
 bool checkimages::IsImageCorrupted (QString filePath) {
